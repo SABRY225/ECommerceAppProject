@@ -11,6 +11,6 @@ namespace ECommerceApp.Application.Interfaces.Services
     public interface ICustomerUserService
     {
         public CustomerDto Login(LoginUserDto user);
-        public void RegisterAccount(ResgitserCustomerUserDto userDto);
+        public void RegisterAccount(RegistorcustomerUserDto userDto);
     }
 }
