@@ -17,5 +17,7 @@ namespace ECommerceApp.Infrastructure.Configurations
                 .IsRequired()
                 .HasMaxLength(150);
         }
+        
+        
     }
 }
