@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Domain.Entities;
+﻿using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
+using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class CustomerUserRepository
+    public class CustomerUserRepository: ICustomerUserRepository
     {
         public ApplicationDbContext DbContext { get; }
         public CustomerUserRepository(ApplicationDbContext applicationDbContext)
