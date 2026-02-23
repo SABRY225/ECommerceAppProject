@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.DTOs.Customer
 {
-    public class RegistorcustomerUserDto
+    public class RegitserCustomerUserDto
     {
         [Required]
         public string FirstName { get; set; }
