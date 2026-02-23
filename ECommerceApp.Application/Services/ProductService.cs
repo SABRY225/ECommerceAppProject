@@ -5,35 +5,61 @@ using ECommerceApp.Application.DTOs.ProductDtos;
 using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Domain.Entities;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Application.Services
 {
-   public class ProductService : IProductService
+    public class ProductService : IProductService
     {
         private readonly IGenericRebository<Product> _genericRebository;
+
         public ProductService(IGenericRebository<Product> genericRebository)
         {
             _genericRebository = genericRebository;
         }
 
-        public void Add(AddProductDto dto)
+        public IQueryable<GetProductDetailsDto> GetAll()
         {
-            throw new NotImplementedException();
+            var products = _genericRebository.GetAll().Include(p => p.Category).ToList();
+            var productDto = products.Adapt<IQueryable<GetProductDetailsDto>>();
+            return productDto;
+
+        }
+        public void Add(AddProductDto newProduct)
+        {
+            var product = newProduct.Adapt<Product>();
+            _genericRebository.Add(product);
+
+
         }
 
         public void Delete(int id)
         {
-            throw new NotImplementedException();
+            var deletedProduct = _genericRebository.GetAll().FirstOrDefault(p=>p.Id==id);
+            if (deletedProduct == null)
+            {
+                Console.WriteLine("Product Not Found ");
+                return;
+
+            }
+            _genericRebository.Delete(deletedProduct);
         }
 
-        public IQueryable<GetProductDetailsDto> GetAll()
-        {
-            throw new NotImplementedException();
-        }
 
-        public void Update(UpdateProductDto dto)
+        public void Update(UpdateProductDto productDto)
         {
-            throw new NotImplementedException();
+
+            var updateProduct = _genericRebository.GetAll().FirstOrDefault(p => p.Id == productDto.Id);
+            if (updateProduct == null)
+            {
+                Console.WriteLine("Product Not Found ");
+                return;
+            }
+            productDto.Adapt(updateProduct);
+
+          
+            _genericRebository.Update(updateProduct);
         }
     }
 }
