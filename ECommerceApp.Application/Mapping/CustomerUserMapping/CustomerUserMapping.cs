@@ -22,7 +22,7 @@ namespace ECommerceApp.Application.Mapping.CustomerUserMapping
         }
         public void RegisterCustomerMapping()
         {
-            TypeAdapterConfig<RegistorcustomerUserDto, User>
+            TypeAdapterConfig<RegitserCustomerUserDto, User>
                 .NewConfig()
 
                 .Map(dest => dest.FirstName, src => src.FirstName)

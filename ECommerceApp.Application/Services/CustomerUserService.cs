@@ -2,6 +2,7 @@
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Domain.Entities;
+using Mapster;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +33,7 @@ namespace ECommerceApp.Application.Services
         }
 
 
-        public void RegisterAccount(ResgitserCustomerUserDto userDto)
+        public void RegisterAccount(RegitserCustomerUserDto userDto)
         {
             var existingUser = UserRepository.GetUserEmail(userDto.Email);
             if (existingUser != null)
