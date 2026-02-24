@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.DTOs.Customer;
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Mapping.CustomerUserMapping;
 using ECommerceApp.Domain.Entities;
 using Mapster;
 using System;
@@ -30,6 +31,7 @@ namespace ECommerceApp.Application.Services
             }
 
             return user.Adapt<CustomerDto>();
+            
         }
 
 
@@ -40,8 +42,9 @@ namespace ECommerceApp.Application.Services
             {
                 throw new Exception("is Already Exits");
             }
+            var config = CustomerUserMapping.GetRegisterConfig();//mapping templete
 
-            var userEntity = userDto.Adapt<User>();
+            var userEntity = userDto.Adapt<User>(config);
 
 
             UserRepository.RegisterCustomerAccount(userEntity);

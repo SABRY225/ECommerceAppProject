@@ -19,8 +19,7 @@ namespace ECommerceApp.Application.DTOs.Customer
         public string Email { get; set; }
 
         [Required]
-        [Phone]
-        public string PhoneNumber { get; set; }
+        public string Phone { get; set; }
 
         [Required]
         [MinLength(6)]
