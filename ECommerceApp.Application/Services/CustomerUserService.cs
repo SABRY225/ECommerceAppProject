@@ -3,11 +3,15 @@ using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Domain.Entities;
 using Mapster;
+<<<<<<< HEAD
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+=======
+
+>>>>>>> winsform-features
 
 namespace ECommerceApp.Application.Services
 {
@@ -33,7 +37,11 @@ namespace ECommerceApp.Application.Services
         }
 
 
+<<<<<<< HEAD
         public void RegisterAccount(RegitserCustomerUserDto userDto)
+=======
+        public void RegisterAccount(RegistorcustomerUserDto userDto)
+>>>>>>> winsform-features
         {
             var existingUser = UserRepository.GetUserEmail(userDto.Email);
             if (existingUser != null)
@@ -47,5 +55,10 @@ namespace ECommerceApp.Application.Services
             UserRepository.RegisterCustomerAccount(userEntity);
             UserRepository.SaveChanges();
         }
+
+        //public void RegisterAccount(RegistorcustomerUserDto userDto)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
