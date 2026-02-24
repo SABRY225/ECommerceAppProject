@@ -8,9 +8,12 @@ namespace ECommerceApp.Application.Interfaces.Services
 {
    public interface IProductService
     {
-        public IQueryable<GetProductDetailsDto> GetAll();
-        public void Add(AddProductDto dto);
-        public void Update(UpdateProductDto dto);
-        public void Delete(int id);
+        public Task<List<GetProductDetailsDto>> GetAll();
+        public Task<GetProductDetailsDto> GetProductDetails(int id);
+        public Task<List<GetProductDetailsDto>> GetProductsByName(string name);
+        public Task<List<GetProductDetailsDto>> GetProductByCategoryId(int id);
+        public Task Add(AddProductDto dto);
+        public Task Update(UpdateProductDto dto);
+        public Task Delete(int id);
     }
 }

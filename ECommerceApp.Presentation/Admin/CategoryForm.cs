@@ -226,7 +226,7 @@ namespace ECommerceApp.Presentation.Admin
                             Description = doc.RootElement.GetProperty("description").GetString(),
                             ImagePath = doc.RootElement.GetProperty("image").GetString()
                         };
-                        _categoryService.Add(addDto);
+                        await _categoryService.Add(addDto);
                         await LoadCategories();
                         break;
 
@@ -244,7 +244,7 @@ namespace ECommerceApp.Presentation.Admin
 
                     case "DELETE_CATEGORY":
                         int id = doc.RootElement.GetProperty("id").GetInt32();
-                        _categoryService.Delete(id);
+                        await _categoryService.Delete(id);
                         await LoadCategories();
                         break;
 
