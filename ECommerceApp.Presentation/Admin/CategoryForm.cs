@@ -259,14 +259,9 @@ namespace ECommerceApp.Presentation.Admin
             }
         }
 
-        private void HandleNavigation(string page)
-        {
-            if (page == "admin") { new AdminForm().Show(); this.Hide(); }
-            else { MessageBox.Show($"Navigating to {page}..."); }
-        }
     }
 
-    // Helper لضمان تنفيذ الأكواد على Thread الواجهة الرسومية
+
     public static class WebViewExtensions
     {
         public static Task InvokeAsyncSafe(this Control control, Action action)

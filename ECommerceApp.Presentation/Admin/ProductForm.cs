@@ -1,28 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Core;
-using System.Text.Json;
+﻿using ECommerceApp.Application.DTOs.CategoryDtos;
+using ECommerceApp.Application.DTOs.ProductDtos;
 using ECommerceApp.Application.Interfaces.Services;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+using System.Text.Json;
 
 namespace ECommerceApp.Presentation.Admin
 {
     public partial class ProductForm : Form
     {
         private WebView2 webView;
-        public ProductForm()
+        private readonly IProductService _productService;
+        public ProductForm(IProductService productService )
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Product Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
+            _productService = productService;
         }
         private async void InitializeWebView()
         {
@@ -31,6 +26,7 @@ namespace ECommerceApp.Presentation.Admin
 
             // تهيئة البيئة
             await webView.EnsureCoreWebView2Async(null);
+            webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
             string htmlContent = @"
             <!DOCTYPE html>
@@ -40,182 +36,243 @@ namespace ECommerceApp.Presentation.Admin
     <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'>
     <style>
-        :root { --sidebar-bg: #1e3a58; --main-bg: #f4f7f9; --text-light: #a5b4c1; }
+        :root {
+            --sidebar-bg: #1e3a58;
+            --main-bg: #f4f7f9;
+            --primary: #0d6efd;
+        }
         body { background-color: var(--main-bg); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        :root { --sidebar-dark: #1e293b; --bg-light: #f8fafc; --accent: #0f172a; --text-muted: #64748b; }
-        
-        /* Sidebar */
-        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 30px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .nav-link { color: var(--text-light); padding: 15px 25px; text-decoration: none; display: flex; align-items: center; gap: 15px; transition: 0.3s; }
-        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; }
-        .user-profile { margin-top: auto; padding: 20px; background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; }
-
-        /* Main Container */
-        .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 40px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-        .header h1 { margin: 0; font-size: 24px; color: #1e293b; }
-        .header p { margin: 5px 0 0; color: var(--text-muted); }
-        .btn-add { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-
-        /* Search Bar */
-        .search-container { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 20px; margin-bottom: 25px; display: flex; align-items: center; }
-        .search-container input { border: none; outline: none; width: 100%; font-size: 14px; color: #334155; }
-
-        /* Table Styles */
-        .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8fafc; padding: 15px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; font-size: 14px; }
-        
-        /* Product Info */
-        .product-cell { display: flex; align-items: center; gap: 15px; }
-        .product-img { width: 48px; height: 48px; border-radius: 8px; background: #f1f5f9; object-fit: cover; border: 1px solid #e2e8f0; }
-        .sku { font-size: 11px; color: #94a3b8; display: block; }
-        
-        /* Badges */
-        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-        .badge-electronics { background: #eff6ff; color: #2563eb; }
-        .badge-furniture { background: #fff7ed; color: #ea580c; }
-        .badge-accessories { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-
-        /* Action Buttons */
-        .actions button { background: none; border: none; cursor: pointer; padding: 5px; color: #94a3b8; transition: 0.2s; }
-        .actions button:hover { color: #ef4444; }
+        .main { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn-back { background: white; border: 1px solid #dee2e6; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        table { width: 100%; background: white; border-radius: 12px; overflow: hidden; border-collapse: collapse; }
+        th { background: #f1f5f9; padding: 15px; color: #475569; font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .product-img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #eee; }
+        .actions button { background: none; border: none; cursor: pointer; font-size: 18px; margin-right: 10px; }
+        .btn-delete { color: #ef4444; }
     </style>
 </head>
 <body>
-
-    <div class='sidebar'>
-        <div class='sidebar-header d-flex align-items-center gap-2'>
-            <div class='bg-light text-dark p-2 rounded'><i class='bi bi-shop'></i></div>
-            <div>
-                <div class='fw-bold' style='font-size: 0.9rem;'>ADMIN PANEL</div>
-                <div style='font-size: 0.7rem; color: var(--text-light);'>E-Commerce System</div>
+    <div class='main'>
+        <div class='header'>
+            <div class='header-title-section'>
+                <button class='btn-back' onclick='goBack()'><i class='bi bi-arrow-left'></i> Back</button>
+                <h1 class='mt-2' style='font-size: 1.8rem;'>Product Catalog</h1>
             </div>
+            <button class='btn-add' onclick='addProduct()'><i class='bi bi-plus-lg'></i> Add Product</button>
         </div>
-        <nav class='mt-3'>
-            <a href='#' class='nav-link' onclick='navigate(""dashboard"")'><i class='bi bi-grid'></i> Dashboard</a>
-            <a href='#' class='nav-link' onclick='navigate(""categories"")'><i class='bi bi-tags'></i> Categories</a>
-            <a href='#' class='nav-link active' onclick='navigate(""products"")'><i class='bi bi-box-seam'></i> Products</a>
-            <a href='#' class='nav-link' onclick='navigate(""orders"")'><i class='bi bi-cart'></i> Orders</a>
-            <a href='#' class='nav-link' onclick='navigate(""users"")'><i class='bi bi-people'></i> Users</a>
-            <a href='#' class='nav-link' onclick='navigate(""admin"")'><i class='bi bi-person-gear'></i> Admin Management</a>
-        </nav>
-<div class='user-profile d-flex align-items-center justify-content-center'>
-    <button class='btn btn-link text-danger p-0' title='تسجيل الخروج' style='text-decoration: none;'>
-        <i class='bi bi-box-arrow-right' style='font-size: 1.1rem; cursor: pointer;'></i>
-        LogOut
-    </button>
-</div>
+
+        <div class='card' style=""width: 200px;"">
+            <small>Total Products</small>
+            <h2 id='statCount'>0</h2>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id=""productTable"">
+                <tr><td colspan='7' class='text-center'>Loading products...</td></tr>
+            </tbody>
+        </table>
     </div>
 
-
-    <main class='main'>
-        <header class='header'>
-            <div>
-                <h1>Product Management</h1>
-                <p>Manage and update your central product catalog.</p>
-            </div>
-            <button class='btn-add' onclick='postToCSharp(""add_product"", null)'>+ Add New Product</button>
-        </header>
-
-        <div class='search-container'>
-            <input type='text' placeholder='Search products by name, SKU or category...' onkeyup='filterTable(this.value)'>
-        </div>
-
-        <div class='table-container'>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Product Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Stock Level</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><img src='https://cdn-icons-png.flaticon.com/512/428/428911.png' class='product-img'></td>
-                        <td><b>MacBook Pro M2</b><span class='sku'>SKU: LAP-00231</span></td>
-                        <td><span class='badge badge-electronics'>Electronics</span></td>
-                        <td>$1,999.00</td>
-                        <td>42 units</td>
-                        <td class='actions'>
-                            <button onclick='postToCSharp(""edit"", ""LAP-00231"")'>✎</button>
-                            <button onclick='postToCSharp(""delete"", ""LAP-00231"")'>🗑</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><img src='https://cdn-icons-png.flaticon.com/512/0/191.png' class='product-img'></td>
-                        <td><b>iPhone 14 Pro</b><span class='sku'>SKU: PHN-99812</span></td>
-                        <td><span class='badge badge-electronics'>Electronics</span></td>
-                        <td>$999.00</td>
-                        <td>42 units</td>
-                        <td class='actions'>
-                            <button>✎</button><button>🗑</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
-
     <script>
-        function navigate(page) {
-            window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page });
+        // Listen for data from C#
+        window.chrome.webview.addEventListener('message', event => {
+            const data = event.data;
+            if (data.action === ""LOAD_PRODUCTS"") {
+                renderTable(data.products);
+            }
+        });
+
+        function renderTable(products) {
+            const table = document.getElementById(""productTable"");
+            const statCount = document.getElementById(""statCount"");
+            statCount.innerText = products.length;
+
+            if (products.length === 0) {
+                table.innerHTML = ""<tr><td colspan='7' class='text-center'>No products found.</td></tr>"";
+                return;
+            }
+
+            table.innerHTML = products.map(p => `
+                <tr>
+                    <td style='color:#94a3b8'>#${p.id}</td>
+                    <td><img src=""${p.imagePath}"" class=""product-img"" onerror=""this.src='https://via.placeholder.com/50'""></td>
+                    <td><b>${p.productName}</b><br><small class=""text-muted"">${p.description || ''}</small></td>
+                    <td><span class=""badge bg-light text-dark"">${p.categoryName}</span></td>
+                    <td>$${p.price.toFixed(2)}</td>
+                    <td>${p.stockQuantity}</td>
+                    <td class='actions'>
+                        <button onclick='editProduct(${JSON.stringify(p)})'>✎</button>
+                        <button class='btn-delete' onclick='deleteProduct(${p.id})'>🗑</button>
+                    </td>
+                </tr>
+            `).join('');
         }
+
+        function addProduct() {
+            // In a real app, use a Bootstrap Modal. Using prompts for brevity:
+            const name = prompt(""Product Name:"");            
+            const description = prompt(""Product description:"");
+            const price = parseFloat(prompt(""Price:""));
+            const stock = parseInt(prompt(""Stock Quantity:""));
+            const catId = parseInt(prompt(""Category ID:""));            
+            const imageUrl = parseInt(prompt(""Image Url:""));
+
+
+            if (name && !isNaN(price)) {
+                window.chrome.webview.postMessage({ 
+                    action: ""ADD_PRODUCT"", 
+                    productName: name, 
+                    description:description,
+                    price: price, 
+                    stockQuantity: stock, 
+                    categoryId: catId,
+                    imagePath: imageUrl
+                });
+            }
+        }
+
+        function editProduct(p) {
+            const newName = prompt(""Edit Name:"", p.productName);            
+            const price = prompt(""Edit Price:"", p.price);            
+            const stockQuantity = prompt(""Edit stock:"", p.stockQuantity);            
+            const image = prompt(""Edit image url:"", p.stockQuantity);
+
+
+            if (newName) {
+                window.chrome.webview.postMessage({ 
+                    action: ""UPDATE_PRODUCT"", 
+                    id: p.id, 
+                    imagePath:image
+                    productName: newName,
+                    price: price,
+                    stockQuantity: stockQuantity,
+                    categoryId: p.categoryId
+                });
+            }
+        }
+
+        function deleteProduct(id) {
+            if (confirm(""Delete this product?"")) {
+                window.chrome.webview.postMessage({ action: ""DELETE_PRODUCT"", id: id });
+            }
+        }
+
+        function goBack() { window.chrome.webview.postMessage({ action: ""GO_BACK"" }); }
+        
+        window.onload = () => { window.chrome.webview.postMessage({ action: ""LOAD"" }); };
     </script>
 </body>
 </html>";
 
             webView.CoreWebView2.NavigateToString(htmlContent);
-            webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
         }
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        private async Task LoadProducts()
         {
-            using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
+            try
             {
-                string action = doc.RootElement.GetProperty("action").GetString();
-                if (action == "NAVIGATE")
+                var products = await _productService.GetAll();
+
+                var data = new
                 {
-                    string page = doc.RootElement.GetProperty("page").GetString();
-                    HandleNavigation(page);
+                    action = "LOAD_CATEGORIES",
+                    products = products // ستحول التلقائياً لـ camelCase بسبب الإعدادات أدناه
+                };
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                string json = JsonSerializer.Serialize(data, options);
+
+                if (webView?.CoreWebView2 != null)
+                {
+                    await webView.InvokeAsyncSafe(() => {
+                        webView.CoreWebView2.PostWebMessageAsJson(json);
+                    });
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
             }
         }
         private readonly ICategoryService _categoryService;
 
-        private void HandleNavigation(string page)
+        private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
-            // هذا الجزء يربط القائمة الجانبية بفتح الفورمز التي قمنا ببرمجتها سابقاً
-            switch (page)
+            try
             {
-                case "categories":
-                    new CategoryForm(_categoryService).Show();
-                    this.Hide();
-                    break;
-                case "orders":
-                    new OrderForm().Show();
-                    this.Hide();
-                    break;
-                //case "dashboard":
-                //    new DashboardForm().Show();
-                //    this.Hide();
-                //    break;
-                case "users":
-                    new CustomerForm().Show();
-                    this.Hide();
-                    break;
-                case "admin":
-                    new AdminForm().Show();
-                    this.Hide();
-                    break;
-                default:
-                    MessageBox.Show($"Opening {page} view...");
-                    break;
+                using JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson);
+                string action = doc.RootElement.GetProperty("action").GetString();
+
+                switch (action)
+                {
+                    case "LOAD":
+                        await LoadProducts();
+                        break;
+
+                    case "GO_BACK":
+                        var adminForm = new DashboardForm(_categoryService);
+                        adminForm.Show();
+                        this.Hide();
+                        break;
+
+                    case "ADD_PRODUCT":
+                        var addDto = new AddProductDto
+                        {
+                            ProductName = doc.RootElement.GetProperty("productName").GetString(),
+                            Description = doc.RootElement.GetProperty("description").GetString(),
+                            ImagePath = doc.RootElement.GetProperty("image").GetString(),
+                            StockQuantity = doc.RootElement.GetProperty("stockQuantity").GetInt32(),
+                            Price = doc.RootElement.GetProperty("price").GetInt32(),
+                            CategoryId = doc.RootElement.GetProperty("categoryId").GetInt32()
+                        };
+                        await _productService.Add(addDto);
+                        await LoadProducts();
+                        break;
+
+                    case "UPDATE_PRODUCT":
+                        var updateDto = new UpdateProductDto
+                        {
+                            Id = doc.RootElement.GetProperty("id").GetInt32(),
+                            ProductName = doc.RootElement.GetProperty("productName").GetString(),
+                            Description = doc.RootElement.GetProperty("description").GetString(),
+                            ImagePath = doc.RootElement.GetProperty("imagePath").GetString(),
+                            StockQuantity = int.Parse(doc.RootElement.GetProperty("stockQuantity").ToString()),
+                            Price = decimal.Parse(doc.RootElement.GetProperty("price").ToString()),
+                            CategoryId = doc.RootElement.GetProperty("categoryId").GetInt32()
+                        };
+                        await _productService.Update(updateDto);
+                        await LoadProducts();
+                        break;
+
+                    case "DELETE_PRODUCT":
+                        int id = doc.RootElement.GetProperty("id").GetInt32();
+                        await _productService.Delete(id);
+                        await LoadProducts();
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"JS-C# Communication Error: {ex.Message}");
             }
         }
     }

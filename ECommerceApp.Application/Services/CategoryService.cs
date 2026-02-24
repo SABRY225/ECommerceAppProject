@@ -89,6 +89,7 @@ namespace ECommerceApp.Application.Services
 
             category.CategoryName = categoryDto.CategoryName;
             category.Description = categoryDto.Description;
+            category.ImagePath = categoryDto.ImagePath;
             category.UpdatedAt = DateTime.Now;
 
             _genericRebository.Update(category);

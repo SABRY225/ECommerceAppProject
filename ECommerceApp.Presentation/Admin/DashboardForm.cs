@@ -18,6 +18,8 @@ namespace ECommerceApp.Presentation.Admin
     {
         private WebView2 webView;
         private readonly ICategoryService _categoryService;
+        private readonly IProductService _productService;
+
         public DashboardForm(ICategoryService categoryService)
         {
             InitializeComponent();
@@ -183,7 +185,7 @@ namespace ECommerceApp.Presentation.Admin
                     this.Hide();
                     break;
                 case "products":
-                    new ProductForm().Show();
+                    new ProductForm(_productService).Show();
                     this.Hide();
                     break;
                 case "orders":

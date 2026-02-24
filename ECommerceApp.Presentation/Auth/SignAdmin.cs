@@ -21,6 +21,7 @@ namespace ECommerceApp.Presentation.Auth
         private readonly ICustomerUserRepository userRepository;
         private readonly ICustomerUserService userService;
         private ICategoryService _categoryService;
+
         public SignAdmin()
         {
             InitializeComponent();
