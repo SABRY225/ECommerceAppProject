@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Web.WebView2.Core;
 using System.Text.Json;
+using ECommerceApp.Application.Interfaces.Services;
 
 namespace ECommerceApp.Presentation.Admin
 {
@@ -190,23 +191,25 @@ namespace ECommerceApp.Presentation.Admin
                 }
             }
         }
+        private readonly ICategoryService _categoryService;
+
         private void HandleNavigation(string page)
         {
             // هذا الجزء يربط القائمة الجانبية بفتح الفورمز التي قمنا ببرمجتها سابقاً
             switch (page)
             {
                 case "categories":
-                    new CategoryForm().Show();
+                    new CategoryForm(_categoryService).Show();
                     this.Hide();
                     break;
                 case "products":
                     new ProductForm().Show();
                     this.Hide();
                     break;
-                case "dashboard":
-                    new DashboardForm().Show();
-                    this.Hide();
-                    break;
+                //case "dashboard":
+                //    new DashboardForm().Show();
+                //    this.Hide();
+                //    break;
                 case "users":
                     new CustomerForm().Show();
                     this.Hide();

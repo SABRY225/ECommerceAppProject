@@ -36,34 +36,17 @@ namespace ECommerceApp.Application.Services
                 ActiveProducts = activeProducts,
                 TopPerforming = topCategory?.CategoryName,
                 LastUpdated = lastUpdated
-
-
-
-
             };
 
-
-
-
-
-
-
-
-
             return categoryDashDto;
-
-       
-
         }
 
-
-        public IQueryable<GetCategoryDto> GetAll()
+        public async Task<List<GetCategoryDto>> GetAll()
         {
-            var categories = _genericRebository.GetAll();
-            var categoriesDto = categories.Adapt<IQueryable<GetCategoryDto>>();
+            var categories = await _genericRebository.GetAll().ToListAsync();
+            
+            var categoriesDto = categories.Adapt<List<GetCategoryDto>>();
             return categoriesDto;
-
-
         }
 
         public GetCategoryDto GetById(int id)
@@ -98,20 +81,17 @@ namespace ECommerceApp.Application.Services
             _genericRebository.Delete(category);
         }
 
-
-        public void Update(UpdateCategoryDto categoryDto)
+        public async Task Update(UpdateCategoryDto categoryDto)
         {
-            var category = _genericRebository.GetAll().FirstOrDefault(c => c.Id == categoryDto.Id);
-            if (category == null)
-            {
-                Console.WriteLine("Category not found");
-                return;
+            var category = await _genericRebository.GetAll().FirstOrDefaultAsync(c => c.Id == categoryDto.Id);
 
-            }
+            if (category == null) return;
+
+            category.CategoryName = categoryDto.CategoryName;
+            category.Description = categoryDto.Description;
+            category.UpdatedAt = DateTime.Now;
 
             _genericRebository.Update(category);
-
-
         }
     }
 }

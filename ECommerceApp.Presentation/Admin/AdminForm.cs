@@ -1,15 +1,16 @@
-﻿using System;
+﻿using ECommerceApp.Application.Interfaces.Services;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Core;
-using System.Text.Json;
 
 namespace ECommerceApp.Presentation.Admin
 {
@@ -195,16 +196,18 @@ namespace ECommerceApp.Presentation.Admin
                 }
             }
         }
+        private readonly ICategoryService _categoryService;
+        
         private void HandleNavigation(string page)
         {
             switch (page)
             {
-                case "dashboard":
-                    new DashboardForm().Show();
-                    this.Hide();
-                    break;
+                //case "dashboard":
+                //    new DashboardForm().Show();
+                //    this.Hide();
+                //    break;
                 case "categories":
-                    new CategoryForm().Show();
+                    new CategoryForm(_categoryService).Show();
                     this.Hide();
                     break;
                 case "products":

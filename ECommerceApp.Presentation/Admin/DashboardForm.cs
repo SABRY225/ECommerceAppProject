@@ -1,26 +1,30 @@
-﻿using System;
+﻿using ECommerceApp.Application.Interfaces.Services;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Core;
-using System.Text.Json;
 
 namespace ECommerceApp.Presentation.Admin
 {
     public partial class DashboardForm : Form
     {
         private WebView2 webView;
-        public DashboardForm()
+        private readonly ICategoryService _categoryService;
+        public DashboardForm(ICategoryService categoryService)
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Administrator Dashboard";
             this.WindowState = FormWindowState.Maximized;
+            _categoryService = categoryService;
+
             InitializeWebView();
         }
         private async void InitializeWebView()
@@ -169,13 +173,13 @@ namespace ECommerceApp.Presentation.Admin
                 }
             }
         }
+
         private void HandleNavigation(string page)
         {
-            // هذا الجزء يربط القائمة الجانبية بفتح الفورمز التي قمنا ببرمجتها سابقاً
             switch (page)
             {
                 case "categories":
-                    new CategoryForm().Show();
+                    new CategoryForm(_categoryService).Show();
                     this.Hide();
                     break;
                 case "products":

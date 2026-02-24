@@ -27,19 +27,12 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void RegisterCustomerAccount(User user)
         {
-            //bool emailExists = DbContext.Users
-            //    .Any(u => u.Email == user.Email && !u.IsDeleted);
-
-            //if (emailExists)
-            //    throw new Exception("Email already exists.");
-
             user.Role = "2";
             user.Phone = "0102356558";
             user.CreatedAt = DateTime.UtcNow;
             user.UpdatedAt = DateTime.UtcNow;
             user.IsDeleted = false;
             DbContext.Users.Add(user);
-            //DbContext.SaveChanges();
         }
 
         public void SaveChanges()

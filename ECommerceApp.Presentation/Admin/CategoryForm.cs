@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
+﻿using ECommerceApp.Application.DTOs.CategoryDtos;
+using ECommerceApp.Application.Interfaces.Services;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
 
 namespace ECommerceApp.Presentation.Admin
@@ -16,13 +9,17 @@ namespace ECommerceApp.Presentation.Admin
     public partial class CategoryForm : Form
     {
         private WebView2 webView;
-        public CategoryForm()
+        private readonly ICategoryService _categoryService;
+
+        public CategoryForm(ICategoryService categoryService)
         {
             InitializeComponent();
-            this.Text = "E-Comm Suite - Category Managment";
+            _categoryService = categoryService;
+            this.Text = "Category Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
         }
+
         private async void InitializeWebView()
         {
             webView = new WebView2 { Dock = DockStyle.Fill };
@@ -31,7 +28,9 @@ namespace ECommerceApp.Presentation.Admin
             // تهيئة المحرك
             await webView.EnsureCoreWebView2Async(null);
 
-            // كتابة كود الـ HTML و CSS مباشرة هنا
+            // ربط حدث استقبال الرسائل قبل تحميل المحتوى
+            webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+
             string htmlContent = @"
             <!DOCTYPE html>
 <html lang='en'>
@@ -40,154 +39,249 @@ namespace ECommerceApp.Presentation.Admin
     <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'>
     <style>
-        :root { --sidebar-bg: #1e3a58; --main-bg: #f4f7f9; --text-light: #a5b4c1; }
+        :root { --sidebar-bg: #1e3a58; --main-bg: #f4f7f9; --text-light: #a5b4c1; --primary: #0d6efd; }
         body { background-color: var(--main-bg); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
         .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; }
+        .btn-back { 
+                        background: white; border: 1px solid #dee2e6; color: var(--secondary); 
+                        padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; 
+                    }
+                    .btn-back:hover { background: #f8f9fa; color: #000; }
         .sidebar-header { padding: 30px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .nav-link { color: var(--text-light); padding: 15px 25px; text-decoration: none; display: flex; align-items: center; gap: 15px; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; }
-        .user-profile { margin-top: auto; padding: 20px; background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; }
-
-        /* Main */
         .main { flex: 1; padding: 40px; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .btn-add { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        /* Cards */
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card small { color: #64748b; font-size: 12px; text-transform: uppercase; }
-        .card h2 { margin: 10px 0 0; color: #1e293b; }
-
-        /* Table */
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         th { text-align: left; background: #f1f5f9; padding: 15px; color: #475569; font-size: 13px; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-        .badge { background: #f1f5f9; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+        .badge { background: #e2e8f0; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
         .actions button { background: none; border: none; cursor: pointer; color: #64748b; margin-right: 10px; font-size: 18px; }
-        .actions button:hover { color: #ef4444; }
+        .actions button:hover { color: var(--primary); }
+        .actions .btn-delete:hover { color: #ef4444; }
     </style>
 </head>
 <body>
-
-    <div class='sidebar'>
-        <div class='sidebar-header d-flex align-items-center gap-2'>
-            <div class='bg-light text-dark p-2 rounded'><i class='bi bi-shop'></i></div>
-            <div>
-                <div class='fw-bold' style='font-size: 0.9rem;'>ADMIN PANEL</div>
-                <div style='font-size: 0.7rem; color: var(--text-light);'>E-Commerce System</div>
-            </div>
-        </div>
-        <nav class='mt-3'>
-            <a href='#' class='nav-link' onclick='navigate(""dashboard"")'><i class='bi bi-grid'></i> Dashboard</a>
-            <a href='#' class='nav-link active' onclick='navigate(""categories"")'><i class='bi bi-tags'></i> Categories</a>
-            <a href='#' class='nav-link' onclick='navigate(""products"")'><i class='bi bi-box-seam'></i> Products</a>
-            <a href='#' class='nav-link' onclick='navigate(""orders"")'><i class='bi bi-cart'></i> Orders</a>
-            <a href='#' class='nav-link' onclick='navigate(""users"")'><i class='bi bi-people'></i> Users</a>
-            <a href='#' class='nav-link' onclick='navigate(""admin"")'><i class='bi bi-person-gear'></i> Admin Management</a>
-        </nav>
-<div class='user-profile d-flex align-items-center justify-content-center'>
-    <button class='btn btn-link text-danger p-0' title='تسجيل الخروج' style='text-decoration: none;'>
-        <i class='bi bi-box-arrow-right' style='font-size: 1.1rem; cursor: pointer;'></i>
-        LogOut
-    </button>
-</div>
-    </div>
-
     <div class='main'>
-        <div class='header'>
-            <div>
-                <h1 style='margin:0'>Category Management</h1>
-                <p style='color:#64748b'>Efficiently organize and curate your store's product taxonomy.</p>
-            </div>
-            <button class='btn-add' onclick='sendToCSharp(""add"")'>+ Add Category</button>
-        </div>
+              <div class='header'>
+                        <div class='header-title-section'>
+                            <button class='btn-back' onclick='goBack()' title='Return to Dashboard'>
+                                <i class='bi bi-arrow-left'></i> Back
+                            </button>
+                            <div>
+                                <h1 style='margin:0; font-size: 1.8rem;'>Category Management</h1>
+                                <p style='color:#64748b; margin:0;'>View and manage your product categories</p>
+                            </div>
+                        </div>
+                        <button class='btn-add' onclick='addCategory()'>
+                            <i class='bi bi-plus-lg'></i> Add New Category
+                        </button>
+                    </div>
 
         <div class='stats'>
-            <div class='card'><small>Total Categories</small><h2>24</h2></div>
-            <div class='card'><small>Active Products</small><h2>1,680</h2></div>
-            <div class='card'><small>Top Performing</small><h2>Electronics</h2></div>
-            <div class='card'><small>Last Updated</small><h2 style='font-size:16px'>2 hours ago</h2></div>
+            <div class='card'><small>Total Categories</small><h2 id='statCount'>0</h2></div>
         </div>
 
         <table>
             <thead>
-                <tr><th>CATEGORY ID</th><th>NAME</th><th>DESCRIPTION</th><th>PRODUCTS</th><th>ACTIONS</th></tr>
+                <tr><th>ID</th><th>NAME</th><th>DESCRIPTION</th><th>Image</th><th>ACTIONS</th></tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td style='color:#94a3b8'>CAT-001</td>
-                    <td><b>Electronics</b></td>
-                    <td>Consumer electronics, mobile devices, and computers.</td>
-                    <td><span class='badge'>450</span></td>
-                    <td class='actions'><button onclick='sendToCSharp(""edit"", ""001"")'>✎</button><button onclick='sendToCSharp(""delete"", ""001"")'>🗑</button></td>
-                </tr>
-                <tr>
-                    <td style='color:#94a3b8'>CAT-002</td>
-                    <td><b>Home & Kitchen</b></td>
-                    <td>Kitchen appliances, furniture, and bedding.</td>
-                    <td><span class='badge'>230</span></td>
-                    <td class='actions'><button onclick='sendToCSharp(""edit"", ""002"")'>✎</button><button onclick='sendToCSharp(""delete"", ""002"")'>🗑</button></td>
-                </tr>
+            <tbody id=""categoryTable"">
+                <tr><td colspan='4' class='text-center'>Loading categories...</td></tr>
             </tbody>
         </table>
     </div>
+
     <script>
-        function navigate(page) {
-            window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page });
+        // استقبال البيانات من C#
+        window.chrome.webview.addEventListener('message', event => {
+            const data = event.data;
+            if (data.action === ""LOAD_CATEGORIES"") {
+                const table = document.getElementById(""categoryTable"");
+                const statCount = document.getElementById(""statCount"");
+                let rows = """";
+                
+                statCount.innerText = data.categories.length;
+
+                if(data.categories.length === 0) {
+                    rows = ""<tr><td colspan='4' class='text-center'>No categories found</td></tr>"";
+                } else {
+                    data.categories.forEach(cat => {
+                        rows += `
+                            <tr>
+                                <td style='color:#94a3b8'>#${cat.id}</td>
+                                <td><b>${cat.categoryName || 'No Name'}</b></td>
+                                <td>${cat.description || '-'}</td>                                
+                                <td>${cat.imagePath || '-'}</td>
+                                <td class='actions'>
+                                    <button onclick='editCategory(${cat.id}, ""${cat.categoryName}"", ""${cat.description || ''}"",""${cat.imagePath}"")'>✎</button>
+                                    <button class='btn-delete' onclick='deleteCategory(${cat.id})'>🗑</button>
+                                </td>
+                            </tr>`;
+                    });
+                }
+                table.innerHTML = rows;
+            }
+        });
+
+        function addCategory() {
+            const name = prompt(""Enter Category Name:"");
+            const desc = prompt(""Enter Description:"");            
+            const image = prompt(""Enter Image Url:"");
+
+            if (name) {
+                window.chrome.webview.postMessage({ action: ""ADD_CATEGORY"", name: name, description: desc,image:image });
+            }
         }
+
+        function editCategory(id, oldName, oldDesc,oldImage) {
+            const name = prompt(""Edit Name:"", oldName);
+            const desc = prompt(""Edit Description:"", oldDesc);            
+            const image = prompt(""Edit Image url:"", oldImage);
+
+            if (name) {
+                window.chrome.webview.postMessage({ action: ""UPDATE_CATEGORY"", id: id, name: name, description: desc,image:image });
+            }
+        }
+
+        function deleteCategory(id) {
+            if (confirm(""Are you sure you want to delete this category?"")) {
+                window.chrome.webview.postMessage({ action: ""DELETE_CATEGORY"", id: id });
+            }
+        }
+        function goBack() {
+                        window.chrome.webview.postMessage({ action: ""GO_BACK"" });
+         }
+ 
+        // إرسال طلب تحميل البيانات بمجرد جاهزية الصفحة
+        window.onload = () => {
+            window.chrome.webview.postMessage({ action: ""LOAD"" });
+        };
     </script>
 </body>
 </html>";
 
-            // تحميل الكود مباشرة
             webView.CoreWebView2.NavigateToString(htmlContent);
-
-            // ربط حدث استقبال الرسائل
-            webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
         }
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+
+        private async Task LoadCategories()
         {
-            using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
+            try
             {
-                string action = doc.RootElement.GetProperty("action").GetString();
-                if (action == "NAVIGATE")
+                var categories = await _categoryService.GetAll();
+
+                var data = new
                 {
-                    string page = doc.RootElement.GetProperty("page").GetString();
-                    HandleNavigation(page);
+                    action = "LOAD_CATEGORIES",
+                    categories = categories // ستحول التلقائياً لـ camelCase بسبب الإعدادات أدناه
+                };
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                string json = JsonSerializer.Serialize(data, options);
+
+                if (webView?.CoreWebView2 != null)
+                {
+                    await webView.InvokeAsyncSafe(() => {
+                        webView.CoreWebView2.PostWebMessageAsJson(json);
+                    });
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
         }
+
+        private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson);
+                string action = doc.RootElement.GetProperty("action").GetString();
+
+                switch (action)
+                {
+                    case "LOAD":
+                        await LoadCategories();
+                        break;
+
+                    case "GO_BACK":
+                        var adminForm = new DashboardForm(_categoryService);
+                        adminForm.Show();
+                        this.Hide();
+                        break;
+
+                    case "ADD_CATEGORY":
+                        var addDto = new AddCategoryDto
+                        {
+                            CategoryName = doc.RootElement.GetProperty("name").GetString(),
+                            Description = doc.RootElement.GetProperty("description").GetString(),
+                            ImagePath = doc.RootElement.GetProperty("image").GetString()
+                        };
+                        _categoryService.Add(addDto);
+                        await LoadCategories();
+                        break;
+
+                    case "UPDATE_CATEGORY":
+                        var updateDto = new UpdateCategoryDto
+                        {
+                            Id = doc.RootElement.GetProperty("id").GetInt32(),
+                            CategoryName = doc.RootElement.GetProperty("name").GetString(),
+                            Description = doc.RootElement.GetProperty("description").GetString(),
+                            ImagePath = doc.RootElement.GetProperty("image").GetString()
+                        };
+                        await _categoryService.Update(updateDto);
+                        await LoadCategories();
+                        break;
+
+                    case "DELETE_CATEGORY":
+                        int id = doc.RootElement.GetProperty("id").GetInt32();
+                        _categoryService.Delete(id);
+                        await LoadCategories();
+                        break;
+
+                    //case "NAVIGATE":
+                    //    HandleNavigation(doc.RootElement.GetProperty("page").GetString());
+                    //    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"JS-C# Communication Error: {ex.Message}");
+            }
+        }
+
         private void HandleNavigation(string page)
         {
-            switch (page)
+            if (page == "admin") { new AdminForm().Show(); this.Hide(); }
+            else { MessageBox.Show($"Navigating to {page}..."); }
+        }
+    }
+
+    // Helper لضمان تنفيذ الأكواد على Thread الواجهة الرسومية
+    public static class WebViewExtensions
+    {
+        public static Task InvokeAsyncSafe(this Control control, Action action)
+        {
+            if (control.InvokeRequired)
             {
-                case "dashboard":
-                    new DashboardForm().Show();
-                    this.Hide();
-                    break;
-                case "products":
-                    new ProductForm().Show();
-                    this.Hide();
-                    break;
-                case "orders":
-                    new OrderForm().Show();
-                    this.Hide();
-                    break;
-                case "users":
-                    new CustomerForm().Show();
-                    this.Hide();
-                    break;
-                case "admin":
-                    new AdminForm().Show();
-                    this.Hide();
-                    break;
-                default:
-                    MessageBox.Show($"Opening {page} view...");
-                    break;
+                var tcs = new TaskCompletionSource<object>();
+                control.BeginInvoke(new MethodInvoker(() => {
+                    try { action(); tcs.SetResult(null); }
+                    catch (Exception ex) { tcs.SetException(ex); }
+                }));
+                return tcs.Task;
             }
+            action();
+            return Task.CompletedTask;
         }
     }
 }

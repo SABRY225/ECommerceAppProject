@@ -33,7 +33,6 @@ namespace ECommerceApp.Application.Services
 
 
         }
-
         public void Delete(int id)
         {
             var deletedProduct = _genericRebository.GetAll().FirstOrDefault(p=>p.Id==id);
@@ -45,8 +44,6 @@ namespace ECommerceApp.Application.Services
             }
             _genericRebository.Delete(deletedProduct);
         }
-
-
         public void Update(UpdateProductDto productDto)
         {
 

@@ -11,7 +11,7 @@ namespace ECommerceApp.Application.Mapper
 {
     public static class MapsterConfig
     {
-        public static void Config()
+        public async static void Config()
         {
             //   TypeAdapterConfig<Category, GetCategoryDto>
             //.NewConfig()

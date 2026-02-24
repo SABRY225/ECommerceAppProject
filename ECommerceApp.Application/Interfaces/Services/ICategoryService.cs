@@ -9,10 +9,10 @@ namespace ECommerceApp.Application.Interfaces.Services
     {
         public CategoryDashboardDto GetDashboard();
 
-        public IQueryable<GetCategoryDto> GetAll();
+        public Task<List<GetCategoryDto>> GetAll();
         public GetCategoryDto GetById(int id);
         public void Add(AddCategoryDto dto);
-        public  void Update(UpdateCategoryDto dto);
+        public  Task Update(UpdateCategoryDto dto);
         public void Delete(int id);
 
 

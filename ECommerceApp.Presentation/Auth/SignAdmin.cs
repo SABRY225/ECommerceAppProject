@@ -2,6 +2,7 @@
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
 using ECommerceApp.Infrastructure.Enums;
 using ECommerceApp.Infrastructure.Repositories;
@@ -19,6 +20,7 @@ namespace ECommerceApp.Presentation.Auth
         private readonly ApplicationDbContext dbContext = new ApplicationDbContext();
         private readonly ICustomerUserRepository userRepository;
         private readonly ICustomerUserService userService;
+        private ICategoryService _categoryService;
         public SignAdmin()
         {
             InitializeComponent();
@@ -154,8 +156,11 @@ window.chrome.webview.addEventListener('message', function(event){
 
                             var successMessage = new { type = "success", message = "Login Success!" };
                             webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
+                            var context = new ApplicationDbContext();
+                            var categoryRepo = new GenericRebository<Category>(context);
+                            _categoryService = new CategoryService(categoryRepo);
 
-                            var adminForm = new DashboardForm();
+                            var adminForm = new DashboardForm(_categoryService);
                             adminForm.Show();
 
                             this.Hide();

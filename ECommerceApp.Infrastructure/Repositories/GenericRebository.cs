@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ECommerceApp.Application.Interfaces.Rebositories;
+﻿using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Domain;
 using ECommerceApp.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -36,7 +32,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public IQueryable<T> GetAll()
         {
-            var result =_context.Set<T>();
+            var result = _context.Set<T>();
             return result;
         }
 
