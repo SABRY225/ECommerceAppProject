@@ -6,14 +6,9 @@ using ECommerceApp.Infrastructure.Enums;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class CustomerUserRepository : ICustomerUserRepository
+    public class CustomerUserRepository(ApplicationDbContext applicationDbContext) : ICustomerUserRepository
     {
-        public ApplicationDbContext DbContext { get; }
-        public CustomerUserRepository(ApplicationDbContext applicationDbContext)
-        {
-            DbContext = applicationDbContext;
-        }
-
+        public ApplicationDbContext DbContext { get; } = applicationDbContext;
 
         public User GetUserByCredentials(string Email, string Password)
         {
