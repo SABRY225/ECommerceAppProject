@@ -4,28 +4,23 @@ using ECommerceApp.Infrastructure.Data;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-   public  class GenericRebository<T> : IGenericRebository<T> where T : BaseEntity
+   public  class GenericRebository<T>(ApplicationDbContext dbContext) : IGenericRebository<T> where T : BaseEntity
     {
-        private ApplicationDbContext _context ;
+        private readonly ApplicationDbContext _context = dbContext;
 
-       public GenericRebository(ApplicationDbContext dbContext)
+        public async Task Add(T entity)
         {
-            _context = dbContext;
-        }
-
-        public void Add(T entity)
-        {
-            _context.Add(entity);
-           _context.SaveChanges();
+            await _context.AddAsync(entity);
+            await _context.SaveChangesAsync();
             
         }
 
-        public void Delete(T entity)
+        public async Task Delete(T entity)
         {
             if (entity != null)
             {
                 _context.Remove(entity);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
 
         }
@@ -36,10 +31,10 @@ namespace ECommerceApp.Infrastructure.Repositories
             return result;
         }
 
-        public void Update(T entity)
+        public async Task Update(T entity)
         {
             _context.Update(entity);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
          }
     }

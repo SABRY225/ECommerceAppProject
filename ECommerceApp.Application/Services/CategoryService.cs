@@ -10,31 +10,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Application.Services
 {
-    public class CategoryService : ICategoryService
+    public class CategoryService(IGenericRebository<Category> genericRebository) : ICategoryService
     {
-        private readonly IGenericRebository<Category> _genericRebository;
+        private readonly IGenericRebository<Category> _genericRebository = genericRebository;
 
-        public CategoryService(IGenericRebository<Category> genericRebository)
+        public async Task<CategoryDashboardDto> GetDashboard()
         {
-            _genericRebository = genericRebository;
-        }
-
-        public CategoryDashboardDto GetDashboard()
-        {
-            var categories =_genericRebository.GetAll().Include(c=>c.Products).Where(c=>c.IsDeleted==false).ToList();
-            var totalCategories =categories.Count();
+            var categories = _genericRebository.GetAll().Include(c=>c.Products).Where(c=>c.IsDeleted==false);
+            var totalCategories = await categories.CountAsync();
             
 
-            var activeProducts=categories.SelectMany(c=>c.Products).Count();
+            var activeProducts=await categories.SelectMany(c=>c.Products).CountAsync();
 
-            var topCategory=categories.OrderByDescending(c=>c.Products.Count()).FirstOrDefault();
+            var topCategory = await categories.OrderByDescending(c => c.Products.Count).FirstOrDefaultAsync();
 
-            var lastUpdated = categories.Max(c => c.UpdatedAt ?? c.CreatedAt);
+            var lastUpdated = await categories.MaxAsync(c => c.UpdatedAt ?? c.CreatedAt);
             var categoryDashDto = new CategoryDashboardDto
             {
                 TotalCategories = totalCategories,
                 ActiveProducts = activeProducts,
-                TopPerforming = topCategory?.CategoryName,
+                TopPerforming = topCategory?.CategoryName ?? "no category",
                 LastUpdated = lastUpdated
             };
 
@@ -49,36 +44,38 @@ namespace ECommerceApp.Application.Services
             return categoriesDto;
         }
 
-        public GetCategoryDto GetById(int id)
+        //public async Task<GetCategoryDto> GetById(int id)
+        //{
+        //    var category = await _genericRebository.GetAll().FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+
+        //    if (category == null)
+        //    {
+        //        Console.WriteLine("Category not found");
+        //        return null;
+
+        //    }
+        //    var categoryDto = category.Adapt<GetCategoryDto>();
+        //    return categoryDto;
+        //}
+        public async Task<GetCategoryDto?> GetById(int id)
         {
-            var category = _genericRebository.GetAll().FirstOrDefault(c => c.Id == id && !c.IsDeleted);
-
-            if (category == null)
-            {
-                Console.WriteLine("Category not found");
-                return null;
-
-            }
-            var categoryDto = category.Adapt<GetCategoryDto>();
-            return categoryDto;
+            return await _genericRebository
+                .GetAll()
+                .Where(c => c.Id == id && !c.IsDeleted)
+                .ProjectToType<GetCategoryDto>()
+                .FirstOrDefaultAsync();
         }
-        public void Add(AddCategoryDto newCategoryDto)
+        public async Task Add(AddCategoryDto newCategoryDto)
         {
             var newCategory = newCategoryDto.Adapt<Category>();
-            _genericRebository.Add(newCategory);
+            await _genericRebository.Add(newCategory);
         }
 
-        public void Delete(int id)
+        public async Task Delete(int id)
         {
             var category = _genericRebository.GetAll().FirstOrDefault(c => c.Id == id && !c.IsDeleted);
 
-            if (category == null)
-            {
-                Console.WriteLine("Category not found");
-                return;
-
-            }
-            _genericRebository.Delete(category);
+            await _genericRebository.Delete(category);
         }
 
         public async Task Update(UpdateCategoryDto categoryDto)
@@ -90,8 +87,8 @@ namespace ECommerceApp.Application.Services
             category.CategoryName = categoryDto.CategoryName;
             category.Description = categoryDto.Description;
             category.UpdatedAt = DateTime.Now;
-
-            _genericRebository.Update(category);
+            category.ImagePath = categoryDto.ImagePath;
+            await _genericRebository.Update(category);
         }
     }
 }

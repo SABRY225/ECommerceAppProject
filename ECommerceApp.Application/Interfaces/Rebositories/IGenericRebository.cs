@@ -7,8 +7,8 @@ namespace ECommerceApp.Application.Interfaces.Rebositories
     public interface IGenericRebository<T>
     {
         public IQueryable<T> GetAll();
-        public void Add(T entity);
-        public void Update(T entity);
-        public void Delete(T entity);
+        public Task Add(T entity);
+        public Task Update(T entity);
+        public Task Delete(T entity);
     }
 }
