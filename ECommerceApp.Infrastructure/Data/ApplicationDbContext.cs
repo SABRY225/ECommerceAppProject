@@ -19,7 +19,7 @@ namespace ECommerceApp.Infrastructure.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=.;Database=EcommerceApp;Integrated security=True;Encrypt=False;TrustServerCertificate=True");
+            optionsBuilder.UseSqlServer("Server=DESKTOP-NQ7JL3H;Database=EcommerceApp ;Integrated security=True;encrypt=false");
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -7,17 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="DTOs\NewFolder\**" />
-    <EmbeddedResource Remove="DTOs\NewFolder\**" />
-    <None Remove="DTOs\NewFolder\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Mapster" Version="6.5.1" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\ECommerceApp.Domain\ECommerceApp.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
   </ItemGroup>
 
 </Project>
