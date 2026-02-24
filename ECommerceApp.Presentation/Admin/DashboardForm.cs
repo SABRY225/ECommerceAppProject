@@ -79,14 +79,12 @@ namespace ECommerceApp.Presentation.Admin
             <a href='#' class='nav-link' onclick='navigate(""users"")'><i class='bi bi-people'></i> Users</a>
             <a href='#' class='nav-link' onclick='navigate(""admin"")'><i class='bi bi-person-gear'></i> Admin Management</a>
         </nav>
-        <div class='user-profile'>
-            <img src='https://ui-avatars.com/api/?name=Alexander+Pierce&background=random' class='rounded-circle' width='40'>
-            <div>
-                <div class='fw-bold' style='font-size: 0.85rem;'>Alexander Pierce</div>
-                <div style='font-size: 0.75rem; color: var(--text-light);'>Super Admin</div>
-            </div>
-            <i class='bi bi-box-arrow-right ms-auto cursor-pointer'></i>
-        </div>
+<div class='user-profile d-flex align-items-center justify-content-center'>
+    <button class='btn btn-link text-danger p-0' title='تسجيل الخروج' style='text-decoration: none;'>
+        <i class='bi bi-box-arrow-right' style='font-size: 1.1rem; cursor: pointer;'></i>
+        LogOut
+    </button>
+</div>
     </div>
 
     <div class='content'>
@@ -178,12 +176,23 @@ namespace ECommerceApp.Presentation.Admin
             {
                 case "categories":
                     new CategoryForm().Show();
+                    this.Hide();
                     break;
                 case "products":
                     new ProductForm().Show();
+                    this.Hide();
                     break;
                 case "orders":
                     new OrderForm().Show();
+                    this.Hide();
+                    break;
+                case "users":
+                    new CustomerForm().Show();
+                    this.Hide();
+                    break;
+                case "admin":
+                    new AdminForm().Show();
+                    this.Hide();
                     break;
                 default:
                     MessageBox.Show($"Opening {page} view...");

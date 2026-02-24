@@ -1,19 +1,34 @@
-using ECommerceApp.Presentation.Admin;
+using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
+using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Services;
+using ECommerceApp.Infrastructure.Data;
+using ECommerceApp.Infrastructure.Repositories;
+using ECommerceApp.Presentation.Client;
 
 namespace ECommerceApp.Presentation
 {
     internal static class Program
     {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
+
             ApplicationConfiguration.Initialize();
-            Application.Run(new AdminForm());
+            var dbContext = new ApplicationDbContext();
+            // create Repository
+            ICustomerUserRepository userRepository = new CustomerUserRepository(dbContext);
+
+            //  create  Service
+            ICustomerUserService userService = new CustomerUserService(userRepository);
+
+            // create form
+            var loginForm = new LoginForm();
+
+            // (Property Injection)
+            loginForm.UserService = userService;
+
+            System.Windows.Forms.Application.Run(loginForm);
         }
     }
 }
+

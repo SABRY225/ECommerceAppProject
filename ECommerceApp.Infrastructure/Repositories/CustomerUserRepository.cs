@@ -1,14 +1,12 @@
 ﻿using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
+using ECommerceApp.Infrastructure.Enums;
+
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class CustomerUserRepository
+    public class CustomerUserRepository : ICustomerUserRepository
     {
         public ApplicationDbContext DbContext { get; }
         public CustomerUserRepository(ApplicationDbContext applicationDbContext)
@@ -29,10 +27,19 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void RegisterCustomerAccount(User user)
         {
-            if (user != null)
-            {
-                DbContext.Users.Add(user);
-            }
+            //bool emailExists = DbContext.Users
+            //    .Any(u => u.Email == user.Email && !u.IsDeleted);
+
+            //if (emailExists)
+            //    throw new Exception("Email already exists.");
+
+            user.Role = "2";
+            user.Phone = "0102356558";
+            user.CreatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
+            user.IsDeleted = false;
+            DbContext.Users.Add(user);
+            //DbContext.SaveChanges();
         }
 
         public void SaveChanges()

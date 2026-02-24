@@ -1,27 +1,36 @@
 ﻿using ECommerceApp.Application.DTOs.Customer;
+using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Services;
+using ECommerceApp.Infrastructure.Data;
 using ECommerceApp.Infrastructure.Enums;
+using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Presentation.Admin;
-using ECommerceApp.Presentation.Auth;
+using ECommerceApp.Presentation.Client;
 using Microsoft.Web.WebView2.WinForms;
 using System;
 using System.Windows.Forms;
 
-namespace ECommerceApp.Presentation.Client
+namespace ECommerceApp.Presentation.Auth
 {
-    public partial class LoginForm : Form
+    public partial class SignAdmin : Form
     {
         private WebView2 webView;
-        [System.ComponentModel.Browsable(false)]
-        [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
-        public ICustomerUserService UserService { get; set; }
-        public LoginForm()
+        private readonly ApplicationDbContext dbContext = new ApplicationDbContext();
+        private readonly ICustomerUserRepository userRepository;
+        private readonly ICustomerUserService userService;
+        public SignAdmin()
         {
             InitializeComponent();
-            this.Text = "E-Comm Suite - Login";
+            dbContext = new ApplicationDbContext();
+            userRepository = new CustomerUserRepository(dbContext);
+            userService = new CustomerUserService(userRepository);
+
+            this.Text = "E-Comm Suite - Admin Login";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
         }
+
 
         private async void InitializeWebView()
         {
@@ -84,16 +93,7 @@ body{
     <button class='btn btn-primary w-100 mb-3' onclick='login()'>
         Sign In
     </button>
-<hr>
-<button class='btn btn-outline-secondary w-100' onclick='SginAdmin()'>
-    Sign Admin
-</button>
 
-    <hr>
-    <p class='text-center text-muted'>New to E-Comm Suite?</p>
-    <button class='btn btn-outline-secondary w-100' onclick='createAccount()'>
-        Create a New Customer Account
-    </button>
 </div>
 
 <div id=""login-message"" class=""text-center mb-3"" style=""height:20px;""></div>
@@ -111,21 +111,7 @@ function login(){
 
     window.chrome.webview.postMessage(data);
 }
-function createAccount(){
-    var data = { action: 'createAccount' };
-    window.chrome.webview.postMessage(data);
-}
-function SginAdmin(){
-    var data = { action: 'SginAdmin' };
-    window.chrome.webview.postMessage(data);
-}
-// Toggle buttons
-document.querySelectorAll('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', function(){
-        document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
-        this.classList.add('active');
-    });
-});
+
 
 // استقبال الرسائل من C#
 window.chrome.webview.addEventListener('message', function(event){
@@ -164,13 +150,13 @@ window.chrome.webview.addEventListener('message', function(event){
 
                         try
                         {
-                            var user = UserService.Login(data);
+                            userService.Login(data);
 
                             var successMessage = new { type = "success", message = "Login Success!" };
                             webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
 
-                            var clientForm = new CategoriesForm();
-                            clientForm.Show();
+                            var adminForm = new DashboardForm();
+                            adminForm.Show();
 
                             this.Hide();
                         }
@@ -179,17 +165,6 @@ window.chrome.webview.addEventListener('message', function(event){
                             var errorMessage = new { type = "error", message = ex.Message };
                             webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(errorMessage));
                         }
-                        break;
-
-                    case "createAccount":
-                        var registerForm = new RegisterForm(); 
-                        registerForm.Show();
-                        this.Hide();
-                        break;
-                    case "SginAdmin":
-                        var signsAdminForm = new SignAdmin();
-                        signsAdminForm.Show();
-                        this.Hide();
                         break;
                 }
             }

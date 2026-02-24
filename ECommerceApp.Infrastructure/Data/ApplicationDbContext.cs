@@ -19,11 +19,7 @@ namespace ECommerceApp.Infrastructure.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-<<<<<<< HEAD
-            optionsBuilder.UseSqlServer("Server=SOLTO;Database=EcommerceApp ;Integrated security=True;encrypt=false");
-=======
             optionsBuilder.UseSqlServer("Server=.;Database=EcommerceApp;Integrated security=True;Encrypt=False;TrustServerCertificate=True");
->>>>>>> winsform-features
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

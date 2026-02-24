@@ -12,4 +12,9 @@
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3800.47" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ECommerceApp.Application\ECommerceApp.Application.csproj" />
+    <ProjectReference Include="..\ECommerceApp.Infrastructure\ECommerceApp.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

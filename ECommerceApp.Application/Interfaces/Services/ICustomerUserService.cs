@@ -12,10 +12,6 @@ namespace ECommerceApp.Application.Interfaces.Services
     public interface ICustomerUserService
     {
         public CustomerDto Login(LoginUserDto user);
-<<<<<<< HEAD
         public void RegisterAccount(RegitserCustomerUserDto userDto);
-=======
-        public void RegisterAccount(RegistorcustomerUserDto userDto);
->>>>>>> winsform-features
     }
 }
