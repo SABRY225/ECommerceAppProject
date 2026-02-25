@@ -1,18 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ECommerceApp.Application.DTOs.Cart;
 using ECommerceApp.Application.DTOs.CategoryDtos;
 using ECommerceApp.Application.DTOs.Order;
 using ECommerceApp.Domain.Entities;
 using Mapster;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Mapper
 {
     public static class MapsterConfig
     {
-        public async static void Config()
+        public static void Config()
         {
             //   TypeAdapterConfig<Category, GetCategoryDto>
             //.NewConfig()
@@ -38,7 +39,19 @@ namespace ECommerceApp.Application.Mapper
 
 
 
+            TypeAdapterConfig<CartProduct, CartProductDto>
+                .NewConfig()
+                .Map(dest => dest.ProductId, src => src.ProductId)
+                .Map(dest => dest.ProductName, src => src.Product.ProductName)
+                .Map(dest => dest.Description, src => src.Product.Description)
+                .Map(dest => dest.ImagePath, src => src.Product.ImagePath)
+                .Map(dest => dest.Price, src => src.Product.Price)
+                .Map(dest => dest.Quantity, src => src.Quantity);
 
+            TypeAdapterConfig<Cart, CartDto>
+                .NewConfig()
+                .Map(dest => dest.UserId, src => src.UserId)
+                .Map(dest => dest.CartProducts, src => src.CartProducts);
         }
 
     }
