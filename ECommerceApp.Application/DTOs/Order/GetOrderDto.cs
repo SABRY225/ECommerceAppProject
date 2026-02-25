@@ -14,6 +14,7 @@ namespace ECommerceApp.Application.DTOs.Order
         public decimal TotalAmount { get; set; }
         public string State { get; set; }
         public int ProductsCount { get; set; }
+        public string CustomerName { get; set; }
         public List<OrderProductDto> ProductsDetails { get; set; }
     }
 }

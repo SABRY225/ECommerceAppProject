@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.Interfaces.Services
 {
     public interface IOrderService
     {
-        Task<bool> CreateOrder(int cartId);
+        Task<string> CreateOrder(int cartId);
         Task<bool> UpdateOrderStatus(UpdateOrderDto updateOrderDto);
         Task<GetOrderDto> GetOrder(int id);
         Task<List<GetOrderDto>> GetCustomerOrders(int cuatomerId);
