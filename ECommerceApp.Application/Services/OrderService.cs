@@ -20,6 +20,7 @@ namespace ECommerceApp.Application.Services
             var orders = await _orderService.GetAll()
                 .Include(o=>o.OrderProducts)
                 .ThenInclude(op=>op.Product)
+                .Include(o=>o.User)
                 .ToListAsync();
             return orders.Adapt<List<GetOrderDto>>();
         }
@@ -29,6 +30,7 @@ namespace ECommerceApp.Application.Services
             var orders = await _orderService.FindAsync(o=>o.User.Id == cuatomerId )
                 .Include(o => o.OrderProducts)
                 .ThenInclude(op => op.Product)
+                .Include(o => o.User)
                 .ToListAsync();
             return orders.Adapt<List<GetOrderDto>>();
         }
@@ -36,7 +38,9 @@ namespace ECommerceApp.Application.Services
         public async Task<GetOrderDto> GetOrder(int id)
         {
             var product = await _orderService.FindAsync(o=>o.Id == id).Include(o => o.OrderProducts)
-                .ThenInclude(op => op.Product).FirstOrDefaultAsync();
+                .ThenInclude(op => op.Product)
+                .Include(o=>o.User)
+                .FirstOrDefaultAsync();
             return product.Adapt<GetOrderDto>();
         }
 

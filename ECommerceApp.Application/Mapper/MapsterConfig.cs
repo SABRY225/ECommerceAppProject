@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.DTOs.Cart;
 using ECommerceApp.Application.DTOs.CategoryDtos;
 using ECommerceApp.Application.DTOs.Order;
+using ECommerceApp.Application.DTOs.ProductDtos;
 using ECommerceApp.Domain.Entities;
 using Mapster;
 using System;
@@ -26,16 +27,18 @@ namespace ECommerceApp.Application.Mapper
             TypeAdapterConfig<Category, UpdateCategoryDto>.NewConfig();
             TypeAdapterConfig<Category, CategoryDashboardDto>.NewConfig();
 
-
+            TypeAdapterConfig<Product, GetProductDetailsDto>.NewConfig()
+                .Map(dest => dest.CategoryName, src => src.Category.CategoryName);
 
             TypeAdapterConfig<OrderProduct, OrderProductDto>.NewConfig()
                 .Map(dest => dest.ImagePath, src => src.Product.ImagePath)
                 .Map(dest => dest.ProductName, src => src.Product.ProductName)
                 .Map(dest => dest.Description, src => src.Product.Description);
 
-            TypeAdapterConfig<Order,GetOrderDto>.NewConfig()
-                .Map(dest=>dest.ProductsCount ,src=>src.OrderProducts.Count)
-                .Map(dest=>dest.ProductsDetails,src=>src.OrderProducts);
+            TypeAdapterConfig<Order, GetOrderDto>.NewConfig()
+                .Map(dest => dest.ProductsCount, src => src.OrderProducts.Count)
+                .Map(dest => dest.ProductsDetails, src => src.OrderProducts)
+                .Map(dest => dest.CustomerName, src => src.User.FirstName + src.User.LastName);
 
 
 
