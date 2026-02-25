@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces.Services;
+﻿using ECommerceApp.Application.DTOs.Cart;
+using ECommerceApp.Application.Interfaces.Services;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
@@ -10,11 +11,13 @@ namespace ECommerceApp.Presentation.Client
         private WebView2 webView;
         private readonly IProductService _productService;
         private readonly IOrderService _OrderService;
-        public ProductsForm(IProductService productService, IOrderService orderService  )
+        private readonly ICartService _cartService;
+        public ProductsForm(IProductService productService, IOrderService orderService, ICartService cartService)
         {
             InitializeComponent();
             _productService = productService;
             _OrderService = orderService;
+            _cartService = cartService;
             this.Text = "E-Comm Suite - Products";
             this.WindowState = FormWindowState.Maximized;
 
@@ -183,137 +186,99 @@ body {
 
 <div class='bottom-bar shadow'>
     <div>
-        <strong>Total due:</strong> <span id='totalPrice'>0</span> EGP
+        <i class=""bi bi-cart3 me-2""></i>
+        <strong>Items Count:</strong> <span id='totalPrice'>0</span> 
     </div>
+    <button class=""btn btn-primary"" onclick=""checkout()"">Checkout</button>
 </div>
 
 <script>
+let allProducts = []; 
 
+// مستمع رسائل واحد لكل العمليات
 window.chrome.webview.addEventListener('message', event => {
-
     const data = event.data;
 
-    if (data.type === 'RENDER_PRODUCTS') {
+    switch(data.type) {
+        case 'RENDER_PRODUCTS':
+            allProducts = data.products; 
+            displayProducts(allProducts);
+            break;
+            
+        case 'SET_CUSTOMER_NAME':
+            document.getElementById('customerName').innerText = data.name;
+            break;
 
-        const container = document.getElementById('product-list');
-        let cards = '';
-
-        data.products.forEach(product => {
-
-            cards += `
-            <div class='col-12 col-sm-6 col-md-4'>
-                <div class='product-card' >
-                    <div class='product-img-wrapper'>
-                        <img src='${product.imagePath || ""https://via.placeholder.com/300""}'
-                             class='product-img'
-                             onerror=""this.src='https://via.placeholder.com/300'"">
-                    </div>
-
-                    <div class='product-info text-center'>
-                        <div class='product-title'>${product.productName}</div>
-                        <div class='product-price'>${product.price} EGP</div>
-
-                        <button class='btn-add-cart'
-                                onclick='addToCart(${product.id})'>
-                            <i class='bi bi-cart-plus'></i> Add To Cart
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-        });
-
-        container.innerHTML = cards;
+        case 'UPDATE_CART_UI':
+            const totalPriceElement = document.getElementById('totalPrice');
+            if (totalPriceElement) {
+                totalPriceElement.innerText = data.itemsCount.toLocaleString();
+            }
+            break;
     }
 });
 
-function addToCart(productId){
-    window.chrome.webview.postMessage({
-        type:'ADD_TO_CART',
-        id:productId
-    });
-}
-let allProducts = []; // مصفوفة لتخزين المنتجات الأصلية
-function goToOrders() {
-    window.chrome.webview.postMessage({
-        type: 'GO_TO_ORDERS'
-    });
-}
-window.chrome.webview.addEventListener('message', event => {
-    const data = event.data;
-    if (data.type === 'SET_CUSTOMER_NAME') {
-        document.getElementById('customerName').innerText = data.name;
-    }
-    if (data.type === 'RENDER_PRODUCTS') {
-        allProducts = data.products; // حفظ المنتجات القادمة من السي شارب
-        displayProducts(allProducts); // عرض الكل في البداية
-    }
-});
-
-// وظيفة لعرض المنتجات في الـ HTML
 function displayProducts(products) {
     const container = document.getElementById('product-list');
-    
-    if (products.length === 0) {
-        container.innerHTML = '<div class=""col-12 text-center text-muted py-5"">No products found with this name.</div>';
+    if (!products || products.length === 0) {
+        container.innerHTML = '<div class=""col-12 text-center text-muted py-5"">No products found.</div>';
         return;
     }
 
     let cards = '';
     products.forEach(product => {
-cards += `
-<div class='col-12 col-sm-6 col-md-4'>
-    <div class='product-card' onclick='viewDetails(${product.id})' style='cursor:pointer'>
-        <div class='product-img-wrapper'>
-            <img src='${product.imagePath || ""https://via.placeholder.com/300""}' 
-                 class='product-img' 
-                 onerror=""this.src='https://via.placeholder.com/300'"">
-        </div>
-        <div class='product-info text-center'>
-            <div class='product-title'>${product.productName}</div>
-            <div class='product-price'>${product.price} EGP</div>
-            <button class='btn-add-cart' onclick='event.stopPropagation(); addToCart(${product.id})'>
-                <i class='bi bi-cart-plus'></i> Add To Cart
-            </button>
-        </div>
-    </div>
-</div>`;
+        cards += `
+        <div class='col-12 col-sm-6 col-md-4'>
+            <div class='product-card' onclick='viewDetails(${product.id})' style='cursor:pointer'>
+                <div class='product-img-wrapper'>
+                    <img src='${product.imagePath || ""https://via.placeholder.com/300""}' 
+                         class='product-img' 
+                         onerror=""this.src='https://via.placeholder.com/300'"">
+                </div>
+                <div class='product-info text-center'>
+                    <div class='product-title'>${product.productName}</div>
+                    <div class='product-price'>${product.price} EGP</div>
+                    <button class='btn-add-cart' onclick='event.stopPropagation(); addToCart(${product.id})'>
+                        <i class='bi bi-cart-plus'></i> Add To Cart
+                    </button>
+                </div>
+            </div>
+        </div>`;
     });
     container.innerHTML = cards;
 }
 
-// وظيفة الفلترة (البحث)
 function filterProducts() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    
-    // فلترة المصفوفة بناءً على الاسم
-    const filtered = allProducts.filter(product => 
-        product.productName.toLowerCase().includes(searchTerm)
-    );
-    
-    displayProducts(filtered); // إعادة عرض النتائج المفلترة فقط
+    const filtered = allProducts.filter(p => p.productName.toLowerCase().includes(searchTerm));
+    displayProducts(filtered);
 }
 
-function addToCart(productId){
-    window.chrome.webview.postMessage({
-        type:'ADD_TO_CART',
-        id:productId
-    });
+function addToCart(productId) {
+    window.chrome.webview.postMessage({ type: 'ADD_TO_CART', id: productId });
 }
+
 function viewDetails(productId) {
-    window.chrome.webview.postMessage({
-        type: 'VIEW_DETAILS',
-        id: productId
-    });
+    window.chrome.webview.postMessage({ type: 'VIEW_DETAILS', id: productId });
 }
+
+function goToOrders() {
+    window.chrome.webview.postMessage({ type: 'GO_TO_ORDERS' });
+}
+
 function logout() {
     if(confirm('Are you sure you want to logout?')) {
         window.chrome.webview.postMessage({ type: 'LOGOUT' });
     }
 }
+function checkout() {
+    window.chrome.webview.postMessage({ 
+        type: 'OPEN_CART' 
+    });
+}
 window.onload = () => {
-    window.chrome.webview.postMessage({ type:'LOAD_PRODUCTS' });
+    window.chrome.webview.postMessage({ type: 'LOAD_PRODUCTS' });
 };
-
 </script>
 
 </body>
@@ -341,6 +306,34 @@ window.onload = () => {
 
             webView.CoreWebView2.PostWebMessageAsJson(json);
         }
+        private async Task LoadCart()
+        {
+            var cart = await _cartService.GetCustomerCart(UserSession.CustomerId);
+            if(cart != null)
+            {
+                var itemsCount = cart.CartProducts.Sum(p => p.Quantity);
+                var data = new
+                {
+                    type = "UPDATE_CART_UI",
+                    itemsCount = itemsCount,
+                };
+
+                string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                webView.CoreWebView2.PostWebMessageAsJson(json);
+            }
+            else
+            {
+                var data = new
+                {
+                    type = "UPDATE_CART_UI",
+                    itemsCount = 0,
+                };
+
+                string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                webView.CoreWebView2.PostWebMessageAsJson(json);
+            }
+
+        }
         private void SetCustomerInfo()
         {
             var data = new { type = "SET_CUSTOMER_NAME", name = UserSession.CustomerName };
@@ -356,11 +349,19 @@ window.onload = () => {
             {
                 case "LOAD_PRODUCTS":
                     await LoadProducts();
+                    await LoadCart();
                     SetCustomerInfo();
                     break;
 
                 case "ADD_TO_CART":
                     int id = doc.RootElement.GetProperty("id").GetInt32();
+                    AddProductToCartDto dataProductdto = new AddProductToCartDto
+                    {
+                        ProductId = id,
+                        CustomerId = UserSession.CustomerId,
+                    };
+                    await _cartService.AddToCart(dataProductdto);
+                    await LoadCart();
                     MessageBox.Show($"تم إضافة المنتج رقم {id} إلى السلة بنجاح!");
                     break;
                 case "GO_TO_ORDERS":
@@ -370,8 +371,21 @@ window.onload = () => {
                 case "VIEW_DETAILS":
                     int productId = doc.RootElement.GetProperty("id").GetInt32();
                     var p=await _productService.GetProductDetails(productId);
-                    var productDetailsForm=new ProductDetailsForm(p);
-                    productDetailsForm.Show();
+                    using (var productDetailsForm = new ProductDetailsForm(p, _cartService))
+                    {
+                        productDetailsForm.ShowDialog();
+                    }
+                    await LoadCart();
+                    break;
+                case "OPEN_CART":
+                    var cartForm = new CartForm(_cartService, _OrderService);
+
+                    cartForm.FormClosed += async (s, args) =>
+                    {
+                        await LoadCart(); 
+                    };
+
+                    cartForm.Show();
                     break;
                 case "LOGOUT":
                     UserSession.CustomerId = 0;

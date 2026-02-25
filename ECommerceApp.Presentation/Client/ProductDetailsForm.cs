@@ -1,4 +1,6 @@
-﻿using ECommerceApp.Application.DTOs.ProductDtos;
+﻿using ECommerceApp.Application.DTOs.Cart;
+using ECommerceApp.Application.DTOs.ProductDtos;
+using ECommerceApp.Application.Interfaces.Services;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
@@ -9,10 +11,11 @@ namespace ECommerceApp.Presentation.Client
     {
         private WebView2 webView;
         private readonly GetProductDetailsDto _product;
-
-        public ProductDetailsForm(GetProductDetailsDto product)
+        private readonly ICartService _cartService;
+        public ProductDetailsForm(GetProductDetailsDto product, ICartService cartService)
         {
             _product = product;
+            _cartService = cartService;
             InitializeComponent();
             this.WindowState = FormWindowState.Maximized;
             this.Text = "Product Details - " + _product.ProductName;
@@ -27,12 +30,10 @@ namespace ECommerceApp.Presentation.Client
             await webView.EnsureCoreWebView2Async(null);
             webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
-            // استدعاء الدالة التي تقوم بتفريغ البيانات في القالب
             string finalHtml = GetHtmlTemplate();
             webView.CoreWebView2.NavigateToString(finalHtml);
         }
 
-        // الدالة المسؤولة عن تفريغ البيانات داخل قالب HTML
         private string GetHtmlTemplate()
         {
             return $@"
@@ -125,7 +126,7 @@ namespace ECommerceApp.Presentation.Client
 </html>";
         }
 
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             try
             {
@@ -139,7 +140,16 @@ namespace ECommerceApp.Presentation.Client
                     }
                     else if (action == "ADD")
                     {
-                        MessageBox.Show($"Success: {_product.ProductName} has been added to your cart.", "Cart Update", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        var addProductDto = new AddProductToCartDto
+                        {
+                            ProductId = _product.Id,
+                            CustomerId = UserSession.CustomerId,
+                        };
+
+                        await _cartService.AddToCart(addProductDto);
+
+                        MessageBox.Show($"{_product.ProductName} has been added to your cart successfully!",
+                                        "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
             }

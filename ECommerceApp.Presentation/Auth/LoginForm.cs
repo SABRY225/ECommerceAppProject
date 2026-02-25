@@ -3,11 +3,8 @@ using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
-using ECommerceApp.Infrastructure.Enums;
 using ECommerceApp.Infrastructure.Repositories;
-using ECommerceApp.Presentation.Admin;
 using ECommerceApp.Presentation.Auth;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Web.WebView2.WinForms;
 using System;
 using System.Windows.Forms;
@@ -22,6 +19,7 @@ namespace ECommerceApp.Presentation.Client
         public ICustomerUserService UserService { get; set; }
         private IProductService _productService;
         private IOrderService _orderService;
+        private ICartService _cartService;
         private readonly ApplicationDbContext dbContext = new ApplicationDbContext();
 
         public LoginForm()
@@ -186,10 +184,12 @@ window.chrome.webview.addEventListener('message', function(event){
                                 var context = new ApplicationDbContext();
                                 var productRepo = new GenericRebository<Product>(context);
                                 var orderRepo = new GenericRebository<Order>(context);
+                                var cartRepo = new GenericRebository<Cart>(context);
                                 _productService = new ProductService(productRepo);
                                 _orderService = new OrderService(orderRepo);
+                                _cartService = new CartService(cartRepo, productRepo);
 
-                                var clientForm = new ProductsForm(_productService, _orderService);
+                                var clientForm = new ProductsForm(_productService, _orderService, _cartService);
                                 clientForm.Show();
                                 this.Hide();
                             }

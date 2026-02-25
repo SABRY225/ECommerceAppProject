@@ -1,16 +1,6 @@
-﻿using Microsoft.Web.WebView2.Core;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
+﻿using ECommerceApp.Application.Interfaces.Services;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
 
 namespace ECommerceApp.Presentation.Client
@@ -18,9 +8,13 @@ namespace ECommerceApp.Presentation.Client
     public partial class CartForm : Form
     {
         private WebView2 webView;
-        public CartForm()
+        private readonly IOrderService _OrderService;
+        private readonly ICartService _cartService;
+        public CartForm(ICartService cartService, IOrderService orderService)
         {
             InitializeComponent();
+            _OrderService = orderService;
+            _cartService = cartService;
             this.Text = "E-Comm Suite - Shopping Cart";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
@@ -32,7 +26,9 @@ namespace ECommerceApp.Presentation.Client
 
             await webView.EnsureCoreWebView2Async(null);
             webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
-
+            webView.CoreWebView2.DOMContentLoaded += async (s, e) => {
+                await LoadCartData();
+            };
             string htmlContent = @"
 <!DOCTYPE html>
 <html lang='en'>
@@ -76,99 +72,200 @@ namespace ECommerceApp.Presentation.Client
         /* Controls */
         .qty-control { display: flex; align-items: center; gap: 10px; border: 1px solid #eee; border-radius: 6px; padding: 2px 10px; }
         .btn-remove { color: #dc3545; border: none; background: none; font-size: 0.85rem; cursor: pointer; }
+.qty-control { 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    padding: 5px 12px; 
+    background: #fff;
+}
+.qty-control button { 
+    font-weight: bold; 
+    font-size: 1.2rem; 
+    cursor: pointer; 
+    color: var(--dark-blue);
+    transition: 0.2s;
+}
+.qty-control button:hover:not(:disabled) { 
+    color: #0d6efd; 
+}
+.qty-control button:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+.btn-back {
+    border: 1px solid #ddd;
+    background: white;
+    padding: 5px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-back:hover {
+    background: #f0f0f0;
+    border-color: #bbb;
+}
     </style>
 </head>
 <body>
-
-    <nav class='navbar d-flex justify-content-between align-items-center'>
+<nav class='navbar d-flex justify-content-between align-items-center'>
+    <div class='d-flex align-items-center gap-3'>
+        <button class='btn-back' onclick='goBack()'>
+            <i class='bi bi-arrow-left'></i> Back
+        </button>
         <div class='fw-bold'><i class='bi bi-shop me-2'></i> E-Comm Suite</div>
-        <div class='d-flex gap-3 align-items-center'>
-            <span class='small fw-bold'>Ahmed Sabry</span>
-            <div class='bg-light rounded-circle p-2'><i class='bi bi-person'></i></div>
-        </div>
-    </nav>
+    </div>
+    <div class='d-flex gap-3 align-items-center'>
+        <span class='small fw-bold' id=""clientName"">Loading...</span>
+        <div class='bg-light rounded-circle p-2'><i class='bi bi-person'></i></div>
+    </div>
+</nav>
 
     <div class='container cart-container'>
-        <div class='cart-items-section'>
-            <h3 class='mb-4 fw-bold'>Shopping Cart <small class='text-muted fs-6'>(3 items)</small></h3>
-            
-            <div class='cart-item-card'>
-                <img src='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200' class='item-img'>
-                <div class='item-details'>
-                    <div class='item-title'>Smartphone Pro Max</div>
-                    <div class='item-meta'>Color: Stellar Black | Capacity: 256 GB</div>
-                    <div class='item-price'>2,999 EGP</div>
-                </div>
-                <div class='text-end'>
-                    <div class='qty-control mb-2'>
-                        <button class='border-0 bg-transparent'>-</button>
-                        <span>1</span>
-                        <button class='border-0 bg-transparent'>+</button>
-                    </div>
-                    <button class='btn-remove' onclick='removeItem(1)'><i class='bi bi-trash me-1'></i> Remove</button>
-                </div>
+        <div class='cart-items-section' id=""itemsList"">
             </div>
 
-            <div class='cart-item-card'>
-                <img src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200' class='item-img'>
-                <div class='item-details'>
-                    <div class='item-title'>Wireless Headphones</div>
-                    <div class='item-meta'>Color: Pearl White | Noise Cancelling</div>
-                    <div class='item-price'>850 EGP</div>
-                </div>
-                <div class='text-end'>
-                    <div class='qty-control mb-2'>
-                        <button class='border-0 bg-transparent'>-</button>
-                        <span>1</span>
-                        <button class='border-0 bg-transparent'>+</button>
-                    </div>
-                    <button class='btn-remove' onclick='removeItem(2)'><i class='bi bi-trash me-1'></i> Remove</button>
-                </div>
+        <div class='summary-card' id=""summaryBox"">
             </div>
-        </div>
-
-        <div class='summary-card'>
-            <h5 class='fw-bold mb-4'>Order Summary</h5>
-            <div class='summary-row'><span>Subtotal</span><span>4,299 EGP</span></div>
-            <div class='summary-row'><span>Shipping</span><span class='text-success fw-bold'>Free</span></div>
-            <div class='summary-row'><span>Tax (15%)</span><span>644.85 EGP</span></div>
-            
-            <div class='total-row d-flex justify-content-between text-dark'>
-                <span>Total</span>
-                <span>4,943.85 EGP</span>
-            </div>
-            <div class='text-muted small text-end'>Including VAT</div>
-
-            <button class='btn-checkout' onclick='checkout()'>Checkout</button>
-        </div>
     </div>
 
     <script>
+        window.chrome.webview.addEventListener('message', event => {
+            const data = event.data;
+            if (data.type === 'RENDER_CART') {
+                renderCart(data);
+            }
+        });
+
+        function renderCart(data) {
+            document.getElementById('clientName').innerText = data.customerName;
+            
+            // 1. عرض المنتجات
+            const itemsContainer = document.getElementById('itemsList');
+            let itemsHtml = `<h3 class='mb-4 fw-bold'>Shopping Cart <small class='text-muted fs-6'>(${data.items.length} items)</small></h3>`;
+            
+            if (data.items.length === 0) {
+                itemsHtml += ""<div class='alert alert-info'>Your cart is empty</div>"";
+            }
+
+            data.items.forEach(item => {
+    itemsHtml += `
+    <div class='cart-item-card'>
+        <img src='${item.imagePath }' class='item-img'>
+        <div class='item-details'>
+            <div class='item-title'>${item.productName}</div>
+            <div class='item-price'>${item.price.toLocaleString()} EGP</div>
+        </div>
+        <div class='text-end'>
+            <div class='qty-control mb-2'>
+                <button class='border-0 bg-transparent' onclick='updateQty(${item.productId}, ${item.quantity - 1})' ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                <span class='fw-bold'>${item.quantity}</span>
+                <button class='border-0 bg-transparent' onclick='updateQty(${item.productId}, ${item.quantity + 1})'>+</button>
+            </div>
+            <button class='btn-remove' onclick='removeItem(${item.productId})'>
+                <i class='bi bi-trash me-1'></i> Remove
+            </button>
+        </div>
+    </div>`;
+});
+            itemsContainer.innerHTML = itemsHtml;
+
+            // 2. عرض ملخص الحساب
+            document.getElementById('summaryBox').innerHTML = `
+                <h5 class='fw-bold mb-4'>Order Summary</h5>
+                <div class='total-row d-flex justify-content-between text-dark'>
+                    <span>Total</span>
+                    <span>${data.total.toLocaleString()} EGP</span>
+                </div>
+                <button class='btn-checkout' onclick='checkout()'>Complete Order</button>
+            `;
+        }
+
         function removeItem(id) {
             window.chrome.webview.postMessage({ action: 'REMOVE', itemId: id });
         }
+        function updateQty(id, newQty) {
+    if (newQty < 1) return; 
+    window.chrome.webview.postMessage({ 
+        action: 'UPDATE_QUANTITY', 
+        itemId: id, 
+        quantity: newQty 
+    });
+}
         function checkout() {
             window.chrome.webview.postMessage({ action: 'CHECKOUT' });
         }
+function goBack() {
+    window.chrome.webview.postMessage({ action: 'CLOSE_FORM' });
+}
     </script>
 </body>
 </html>";
 
-            webView.NavigateToString(htmlContent);
+            webView.CoreWebView2.NavigateToString(htmlContent);
         }
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        private async Task LoadCartData()
+        {
+            // جلب بيانات السلة الحقيقية من السيرفس
+            var cart = await _cartService.GetCustomerCart(UserSession.CustomerId);
+
+            var data = new
+            {
+                type = "RENDER_CART",
+                customerName = UserSession.CustomerName,
+                items = cart.CartProducts.Select(p => new {
+                    productId = p.ProductId,
+                    productName = p.ProductName,
+                    imagePath = p.ImagePath,
+                    price = p.Price,
+                    quantity = p.Quantity,
+                    itemTotal = p.ItemTotal
+                }).ToList(),
+                total = cart.CartProducts.Sum(p => p.ItemTotal) * 1.15m
+            };
+
+            string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            webView.CoreWebView2.PostWebMessageAsJson(json);
+        }
+
+
+        private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
             {
                 string action = doc.RootElement.GetProperty("action").GetString();
+
+                if (action == "CLOSE_FORM")
+                {
+                    this.Close();
+                }
+
                 if (action == "REMOVE")
                 {
-                    int id = doc.RootElement.GetProperty("itemId").GetInt32();
-                    MessageBox.Show($"جاري حذف المنتج رقم {id} من السلة...");
+                    int itemId = doc.RootElement.GetProperty("itemId").GetInt32();
+
+                    await _cartService.RemoveItem(UserSession.CustomerId, itemId);
+
+                    await LoadCartData();
                 }
+                else if (action == "UPDATE_QUANTITY") 
+                {
+                    int itemId = doc.RootElement.GetProperty("itemId").GetInt32();
+                    int newQty = doc.RootElement.GetProperty("quantity").GetInt32();
+
+                    await _cartService.UpdateItemQuantity(UserSession.CustomerId, itemId, newQty);
+
+                    await LoadCartData();
+                }
+
                 else if (action == "CHECKOUT")
                 {
-                    MessageBox.Show("جاري الانتقال لصفحة الدفع النهائية...");
+                    MessageBox.Show("Processing your order...");
                 }
             }
         }
