@@ -11,9 +11,9 @@ namespace ECommerceApp.Presentation.Admin
         private WebView2 webView;
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
+        private readonly IOrderService _orderService;
 
-        // تم إضافة ICategoryService هنا لمنع الخطأ عند العودة للخلف
-        public ProductForm(IProductService productService, ICategoryService categoryService)
+        public ProductForm(IProductService productService, ICategoryService categoryService, IOrderService orderService )
         {
             InitializeComponent();
             _productService = productService;
@@ -22,6 +22,7 @@ namespace ECommerceApp.Presentation.Admin
             this.Text = "E-Comm Suite - Product Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
+            _orderService = orderService;
         }
 
         private async void InitializeWebView()
@@ -37,63 +38,117 @@ namespace ECommerceApp.Presentation.Admin
 <html lang='en'>
 <head>
     <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
     <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'>
     <style>
-        :root { --sidebar-bg: #1e3a58; --main-bg: #f4f7f9; --primary: #0d6efd; }
-        body { background-color: var(--main-bg); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .main { flex: 1; padding: 40px; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn-back { background: white; border: 1px solid #dee2e6; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
-        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        table { width: 100%; background: white; border-radius: 12px; overflow: hidden; border-collapse: collapse; }
-        th { background: #f1f5f9; padding: 15px; color: #475569; font-size: 13px; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-        .product-img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #eee; }
-        .actions button { background: none; border: none; cursor: pointer; font-size: 18px; margin-right: 10px; }
-        .btn-delete { color: #ef4444; }
+        :root { 
+            --primary: #4361ee; 
+            --success: #4cc9f0; 
+            --danger: #f72585; 
+            --dark: #212529;
+            --light-bg: #f8f9fa;
+        }
+        body { background-color: #f3f4f7; font-family: 'Inter', 'Segoe UI', sans-serif; color: #444; }
+        
+        /* Container Layout */
+        .main-container { padding: 30px; max-width: 1400px; margin: auto; }
+        
+        /* Header Section */
+        .page-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 30px; background: white; padding: 20px; border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        /* Stats Card */
+        .stat-badge {
+            background: var(--primary); color: white; padding: 5px 15px;
+            border-radius: 20px; font-weight: 600; font-size: 0.9rem;
+        }
+
+        /* Product Table Styling */
+        .table-container {
+            background: white; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+        }
+        .table { margin-bottom: 0; vertical-align: middle; }
+        .table thead { background-color: #f8f9fa; border-bottom: 2px solid #edf2f7; }
+        .table th { padding: 18px; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+        .table td { padding: 16px; border-bottom: 1px solid #f1f5f9; }
+
+        /* Product Info */
+        .product-cell { display: flex; align-items: center; gap: 15px; }
+        .product-img { 
+            width: 55px; height: 55px; object-fit: cover; border-radius: 12px;
+            border: 1px solid #eee; transition: transform 0.2s;
+        }
+        .product-img:hover { transform: scale(1.1); }
+        .product-name { font-weight: 600; color: var(--dark); margin: 0; font-size: 0.95rem; }
+        .product-desc { font-size: 0.8rem; color: #94a3b8; display: block; }
+
+        /* Status & Badges */
+        .price-tag { font-weight: 700; color: var(--primary); font-size: 1rem; }
+        .stock-badge { 
+            padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+        }
+        .stock-low { background: #fff1f2; color: #e11d48; }
+        .stock-ok { background: #f0fdf4; color: #16a34a; }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 35px; height: 35px; border-radius: 10px; border: none;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: all 0.2s; margin-left: 5px;
+        }
+        .btn-edit { background: #eef2ff; color: #4361ee; }
+        .btn-edit:hover { background: #4361ee; color: white; }
+        .btn-delete { background: #fff1f2; color: #e11d48; }
+        .btn-delete:hover { background: #e11d48; color: white; }
+        
+        .btn-add-new {
+            background: var(--primary); color: white; border: none; padding: 10px 20px;
+            border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 14px 0 rgba(67, 97, 238, 0.39);
+        }
     </style>
 </head>
 <body>
-    <div class='main'>
-        <div class='header'>
+    <div class='main-container'>
+        <div class='page-header'>
             <div>
-                <button class='btn-back' onclick='goBack()'><i class='bi bi-arrow-left'></i> Back</button>
-                <h1 class='mt-2' style='font-size: 1.8rem;'>Product Catalog</h1>
+                <button class='btn btn-light btn-sm mb-2' onclick='goBack()'>
+                    <i class='bi bi-arrow-left'></i> Back to Dashboard
+                </button>
+                <h2 class='fw-bold m-0'>Inventory Management <span id='statCount' class='ms-2 badge bg-primary rounded-pill' style='font-size: 1rem;'>0</span></h2>
             </div>
-            <button class='btn-add' onclick='addProduct()'><i class='bi bi-plus-lg'></i> Add Product</button>
+            <button class='btn-add-new' onclick='addProduct()'>
+                <i class='bi bi-plus-circle-fill'></i> Create New Product
+            </button>
         </div>
 
-        <div class='card' style='width: 200px;'>
-            <small>Total Products</small>
-            <h2 id='statCount'>0</h2>
+        <div class='table-container'>
+            <table class='table'>
+                <thead>
+                    <tr>
+                        <th>Product Details</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Availability</th>
+                        <th class='text-end'>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id='productTable'>
+                    <tr><td colspan='5' class='text-center py-5 text-muted'>Initialising...</td></tr>
+                </tbody>
+            </table>
         </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Image</th>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id='productTable'>
-                <tr><td colspan='7' class='text-center'>Loading...</td></tr>
-            </tbody>
-        </table>
     </div>
 
     <script>
         window.chrome.webview.addEventListener('message', event => {
             const data = event.data;
-            if (data.action === 'LOAD_PRODUCTS') {
-                renderTable(data.products);
-            }
+            if (data.action === 'LOAD_PRODUCTS') renderTable(data.products);
         });
 
         function renderTable(products) {
@@ -101,79 +156,85 @@ namespace ECommerceApp.Presentation.Admin
             document.getElementById('statCount').innerText = products.length;
 
             if (products.length === 0) {
-                table.innerHTML = '<tr><td colspan=7 class=text-center>No products found.</td></tr>';
+                table.innerHTML = '<tr><td colspan=5 class=text-center py-5>No products in your inventory.</td></tr>';
                 return;
             }
 
-            table.innerHTML = products.map(p => `
+            table.innerHTML = products.map(p => {
+                const stockClass = p.stockQuantity < 10 ? 'stock-low' : 'stock-ok';
+                return `
                 <tr>
-                    <td style='color:#94a3b8'>#${p.id}</td>
-                    <td><img src='${p.imagePath}' class='product-img' onerror=""this.src='https://via.placeholder.com/50'""></td>
-                    <td><b>${p.productName}</b><br><small class='text-muted'>${p.description || ''}</small></td>
-                    <td><span class='badge bg-light text-dark'>${p.categoryName || 'N/A'}</span></td>
-                    <td>$${p.price.toFixed(2)}</td>
-                    <td>${p.stockQuantity}</td>
-                    <td class='actions'>
-                        <button onclick='editProduct(${JSON.stringify(p)})'>✎</button>
-                        <button class='btn-delete' onclick='deleteProduct(${p.id})'>🗑</button>
+                    <td>
+                        <div class='product-cell'>
+                            <img src='${p.imagePath}' class='product-img' onerror=""""this.src='https://cdn-icons-png.flaticon.com/512/679/679821.png'"""">
+                            <div>
+                                <p class='product-name'>${p.productName}</p>
+                                <span class='product-desc'>${p.description ? p.description.substring(0, 40) + '...' : 'No description'}</span>
+                            </div>
+                        </div>
                     </td>
-                </tr>
-            `).join('');
+                    <td><span class='badge bg-light text-dark border'>${p.categoryName || 'General'}</span></td>
+                    <td><span class='price-tag'>$${p.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</span></td>
+                    <td><span class='stock-badge ${stockClass}'><i class='bi bi-box-seam me-1'></i> ${p.stockQuantity} in stock</span></td>
+                    <td class='text-end'>
+                        <button class='btn-action btn-edit' onclick='editProduct(${JSON.stringify(p)})' title='Edit'>
+                            <i class='bi bi-pencil-square'></i>
+                        </button>
+                        <button class='btn-action btn-delete' onclick='deleteProduct(${p.id})' title='Delete'>
+                            <i class='bi bi-trash3'></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
         function addProduct() {
+             // ملاحظة: يمكنك هنا فتح Modal بدلاً من الـ prompt في المستقبل
             const name = prompt('Product Name:');
-            const desc = prompt('Description:');
+            if (!name) return;
             const price = parseFloat(prompt('Price:'));
             const stock = parseInt(prompt('Stock:'));
-            const catId = parseInt(prompt('Category ID:'));
+            const catId = parseInt(prompt('Category ID (1, 2, 3...):'));
             const img = prompt('Image URL:');
 
-            if (name && !isNaN(price)) {
-                window.chrome.webview.postMessage({
-                    action: 'ADD_PRODUCT',
-                    productName: name,
-                    description: desc,
-                    price: price,
-                    stockQuantity: stock,
-                    categoryId: catId,
-                    imagePath: img
-                });
-            }
+            window.chrome.webview.postMessage({
+                action: 'ADD_PRODUCT',
+                productName: name,
+                description: '',
+                price: price,
+                stockQuantity: stock,
+                categoryId: catId,
+                imagePath: img
+            });
         }
 
         function editProduct(p) {
             const name = prompt('Edit Name:', p.productName);
-            const price = parseFloat(prompt('Edit Price:', p.price));
-            const stock = parseInt(prompt('Edit Stock:', p.stockQuantity));
-            const img = prompt('Edit Image URL:', p.imagePath);
-
             if (name) {
                 window.chrome.webview.postMessage({
                     action: 'UPDATE_PRODUCT',
                     id: p.id,
                     productName: name,
                     description: p.description,
-                    price: price,
-                    stockQuantity: stock,
+                    price: parseFloat(prompt('Edit Price:', p.price)),
+                    stockQuantity: parseInt(prompt('Edit Stock:', p.stockQuantity)),
                     categoryId: p.categoryId,
-                    imagePath: img
+                    imagePath: prompt('Edit Image URL:', p.imagePath)
                 });
             }
         }
 
         function deleteProduct(id) {
-            if (confirm('Delete this product?')) {
+            if (confirm('Are you sure you want to remove this product?')) {
                 window.chrome.webview.postMessage({ action: 'DELETE_PRODUCT', id: id });
             }
         }
 
         function goBack() { window.chrome.webview.postMessage({ action: 'GO_BACK' }); }
-        
         window.onload = () => { window.chrome.webview.postMessage({ action: 'LOAD' }); };
     </script>
 </body>
-</html>";
+</html>"";";
 
             webView.CoreWebView2.NavigateToString(htmlContent);
         }
@@ -213,7 +274,7 @@ namespace ECommerceApp.Presentation.Admin
                         break;
 
                     case "GO_BACK":
-                        var adminForm = new DashboardForm(_categoryService, _productService);
+                        var adminForm = new DashboardForm(_categoryService, _productService,_orderService);
                         adminForm.Show();
                         this.Close();
                         break;

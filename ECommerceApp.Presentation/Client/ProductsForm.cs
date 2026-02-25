@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
+﻿using ECommerceApp.Application.Interfaces.Services;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
 
 namespace ECommerceApp.Presentation.Client
@@ -16,172 +8,379 @@ namespace ECommerceApp.Presentation.Client
     public partial class ProductsForm : Form
     {
         private WebView2 webView;
-        public ProductsForm(string categoryName = "Electronics")
+        private readonly IProductService _productService;
+        private readonly IOrderService _OrderService;
+        public ProductsForm(IProductService productService, IOrderService orderService  )
         {
             InitializeComponent();
-            this.Text = $"E-Comm Suite - {categoryName}";
+            _productService = productService;
+            _OrderService = orderService;
+            this.Text = "E-Comm Suite - Products";
             this.WindowState = FormWindowState.Maximized;
-            InitializeWebView(categoryName);
+
+            InitializeWebView();
         }
-        private async void InitializeWebView(string categoryName)
+
+        private async void InitializeWebView()
         {
-            webView = new WebView2();
-            webView.Dock = DockStyle.Fill;
+            webView = new WebView2 { Dock = DockStyle.Fill };
             this.Controls.Add(webView);
 
             await webView.EnsureCoreWebView2Async(null);
             webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
-            // كود HTML/CSS/JS مدمج
-            string htmlContent = $@"
-<!DOCTYPE html>
+            string htmlContent = @"<!DOCTYPE html>
 <html lang='en'>
 <head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
-    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'>
-    <style>
-        :root {{ --dark-blue: #1e3a58; --light-bg: #f4f6f9; }}
-        body {{ background-color: var(--light-bg); font-family: 'Segoe UI', sans-serif; padding-bottom: 100px; }}
-        
-        /* Navbar */
-        .navbar {{ background: white; border-bottom: 1px solid #eee; padding: 12px 30px; }}
-        
-        /* Breadcrumb & Search */
-        .breadcrumb-section {{ padding: 20px 40px; font-size: 0.85rem; color: #666; }}
-        .search-container {{ padding: 0 40px 20px 40px; }}
-        .search-input {{ 
-            width: 100%; padding: 12px 20px; border-radius: 10px; 
-            border: 1px solid #ddd; background: white; outline: none;
-        }}
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
+<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'>
 
-        /* Product Cards */
-        .product-card {{ 
-            background: white; border-radius: 15px; overflow: hidden; 
-            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: 0.3s;
-        }}
-        .product-card:hover {{ transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }}
-        .product-img-wrapper {{ background: #000; height: 250px; display: flex; align-items: center; justify-content: center; }}
-        .product-img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
-        .product-info {{ padding: 20px; }}
-        .product-title {{ font-size: 0.95rem; color: #333; margin-bottom: 8px; font-weight: 500; }}
-        .product-price {{ color: var(--dark-blue); font-weight: bold; font-size: 1.1rem; }}
-        .btn-add-cart {{ 
-            width: 100%; background: var(--dark-blue); color: white; 
-            border: none; padding: 10px; border-radius: 8px; margin-top: 15px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }}
+<style>
+:root { --dark-blue:#1e3a58; --light-bg:#f4f6f9; }
 
-        /* Footer Bar */
-        .bottom-bar {{ 
-            position: fixed; bottom: 0; left: 0; right: 0; background: white; 
-            padding: 15px 40px; border-top: 1px solid #eee; display: flex; 
-            justify-content: space-between; align-items: center; z-index: 1000;
-        }}
-        .btn-pay {{ background: var(--dark-blue); color: white; padding: 10px 35px; border-radius: 8px; border: none; }}
-    </style>
+body {
+    background-color: var(--light-bg);
+    font-family:'Segoe UI',sans-serif;
+    padding-bottom:100px;
+}
+
+.navbar {
+    background:white;
+    border-bottom:1px solid #eee;
+    padding:12px 30px;
+}
+
+.search-container {
+    padding:20px 40px;
+}
+
+.search-input {
+    width:100%;
+    padding:12px 20px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    background:white;
+    outline:none;
+}
+
+.product-card {
+    background:white;
+    border-radius:15px;
+    overflow:hidden;
+    border:none;
+    box-shadow:0 4px 10px rgba(0,0,0,0.03);
+    transition:0.3s;
+}
+.product-card:hover {
+    transform:translateY(-5px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+}
+
+.product-img-wrapper {
+    background:#000;
+    height:250px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.product-img {
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+}
+
+.product-info {
+    padding:20px;
+}
+
+.product-title {
+    font-size:1rem;
+    font-weight:500;
+    margin-bottom:8px;
+}
+
+.product-price {
+    color:var(--dark-blue);
+    font-weight:bold;
+    font-size:1.1rem;
+}
+
+.btn-add-cart {
+    width:100%;
+    background:var(--dark-blue);
+    color:white;
+    border:none;
+    padding:10px;
+    border-radius:8px;
+    margin-top:15px;
+}
+
+.bottom-bar {
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:white;
+    padding:15px 40px;
+    border-top:1px solid #eee;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.btn-link:hover {
+    transform: scale(1.1);
+    color: #dc3545 !important;
+}
+</style>
 </head>
+
 <body>
 
-    <nav class='navbar d-flex justify-content-between align-items-center shadow-sm'>
-        <div class='d-flex align-items-center gap-2'>
-            <div class='bg-dark text-white p-2 rounded'><i class='bi bi-shop'></i></div>
-            <span class='fw-bold'>E-Comm Suite</span>
+<nav class='navbar d-flex justify-content-between align-items-center shadow-sm'>
+    <div class='d-flex align-items-center gap-2'  style='cursor:pointer'>
+        <div class='bg-dark text-white p-2 rounded'><i class='bi bi-shop'></i></div>
+        <span class='fw-bold text-dark-blue'>E-Comm Suite</span>
+    </div>
+
+    <div class='d-flex align-items-center gap-4'>
+        <nav class='navbar d-flex justify-content-between align-items-center shadow-sm'>
+    <div class='d-flex align-items-center gap-4'>
+        <button class='btn btn-link text-danger p-0' onclick='logout()' title='Logout'>
+            <i class='bi bi-box-arrow-right fs-4'></i>
+        </button>
+
+        <button class='btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm' onclick='goToOrders()'>
+            <i class='bi bi-bag-check-fill'></i>
+            <span>My Orders</span>
+        </button>
         </div>
-        <div class='d-flex gap-4 align-items-center'>
-            <span class='small fw-bold'>My Orders</span>
-            <div class='bg-light p-2 rounded'><i class='bi bi-box'></i></div>
-            <div class='d-flex align-items-center gap-2'>
-                <span class='small fw-bold'>Ahmed Sabry</span>
-                <div class='bg-light rounded-circle p-2'><i class='bi bi-person'></i></div>
+</nav>
+
+        <div class='customer-profile d-flex align-items-center gap-2'>
+            <div class='text-end d-none d-md-block'>
+                <small class='text-muted d-block' style='font-size: 0.7rem;'>Welcome,</small>
+                <span class='fw-bold' id='customerName' style='color: var(--dark-blue);'>Guest User</span>
+            </div>
+            <div class='avatar-circle'>
+                <i class='bi bi-person-circle' style='font-size: 1.5rem; color: var(--dark-blue);'></i>
             </div>
         </div>
-    </nav>
-
-    <div class='breadcrumb-section'>
-        Categories &nbsp; <i class='bi bi-chevron-right small'></i> &nbsp; <b>{categoryName}</b>
     </div>
+</nav>
 
-    <div class='search-container'>
-        <input type='text' class='search-input' placeholder='Find the product you want...'>
+<div class='search-container'>
+    <input type='text' id='searchInput' class='search-input' 
+           placeholder='Find the product you want...' 
+           oninput='filterProducts()'>
+</div>
+
+<div class='container-fluid px-5'>
+    <div class='row g-4' id='product-list'></div>
+</div>
+
+<div class='bottom-bar shadow'>
+    <div>
+        <strong>Total due:</strong> <span id='totalPrice'>0</span> EGP
     </div>
+</div>
 
-    <div class='container-fluid px-5'>
-        <div class='row g-4' id='product-list'>
-            {GenerateProductCards()}
+<script>
+
+window.chrome.webview.addEventListener('message', event => {
+
+    const data = event.data;
+
+    if (data.type === 'RENDER_PRODUCTS') {
+
+        const container = document.getElementById('product-list');
+        let cards = '';
+
+        data.products.forEach(product => {
+
+            cards += `
+            <div class='col-12 col-sm-6 col-md-4'>
+                <div class='product-card' >
+                    <div class='product-img-wrapper'>
+                        <img src='${product.imagePath || ""https://via.placeholder.com/300""}'
+                             class='product-img'
+                             onerror=""this.src='https://via.placeholder.com/300'"">
+                    </div>
+
+                    <div class='product-info text-center'>
+                        <div class='product-title'>${product.productName}</div>
+                        <div class='product-price'>${product.price} EGP</div>
+
+                        <button class='btn-add-cart'
+                                onclick='addToCart(${product.id})'>
+                            <i class='bi bi-cart-plus'></i> Add To Cart
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = cards;
+    }
+});
+
+function addToCart(productId){
+    window.chrome.webview.postMessage({
+        type:'ADD_TO_CART',
+        id:productId
+    });
+}
+let allProducts = []; // مصفوفة لتخزين المنتجات الأصلية
+function goToOrders() {
+    window.chrome.webview.postMessage({
+        type: 'GO_TO_ORDERS'
+    });
+}
+window.chrome.webview.addEventListener('message', event => {
+    const data = event.data;
+    if (data.type === 'SET_CUSTOMER_NAME') {
+        document.getElementById('customerName').innerText = data.name;
+    }
+    if (data.type === 'RENDER_PRODUCTS') {
+        allProducts = data.products; // حفظ المنتجات القادمة من السي شارب
+        displayProducts(allProducts); // عرض الكل في البداية
+    }
+});
+
+// وظيفة لعرض المنتجات في الـ HTML
+function displayProducts(products) {
+    const container = document.getElementById('product-list');
+    
+    if (products.length === 0) {
+        container.innerHTML = '<div class=""col-12 text-center text-muted py-5"">No products found with this name.</div>';
+        return;
+    }
+
+    let cards = '';
+    products.forEach(product => {
+cards += `
+<div class='col-12 col-sm-6 col-md-4'>
+    <div class='product-card' onclick='viewDetails(${product.id})' style='cursor:pointer'>
+        <div class='product-img-wrapper'>
+            <img src='${product.imagePath || ""https://via.placeholder.com/300""}' 
+                 class='product-img' 
+                 onerror=""this.src='https://via.placeholder.com/300'"">
+        </div>
+        <div class='product-info text-center'>
+            <div class='product-title'>${product.productName}</div>
+            <div class='product-price'>${product.price} EGP</div>
+            <button class='btn-add-cart' onclick='event.stopPropagation(); addToCart(${product.id})'>
+                <i class='bi bi-cart-plus'></i> Add To Cart
+            </button>
         </div>
     </div>
+</div>`;
+    });
+    container.innerHTML = cards;
+}
 
-    <div class='bottom-bar shadow'>
-        <div class='d-flex align-items-center gap-4'>
-            <div>
-                <div class='text-muted small'>Total due</div>
-                <div class='fw-bold fs-5'>1,500 EGP</div>
-            </div>
-        </div>
-        <div class='d-flex align-items-center gap-4'>
-            <div class='text-end'>
-                <div class='small fw-bold'>Shopping basket: <span class='text-primary'>3 items</span></div>
-                <div class='text-muted small'>A new element has been added</div>
-            </div>
-            <div class='fs-3'><i class='bi bi-cart3'></i></div>
-            <button class='btn-pay' onclick='onPay()'><i class='bi bi-cart-check me-2'></i> Pay Offer</button>
-        </div>
-    </div>
+// وظيفة الفلترة (البحث)
+function filterProducts() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // فلترة المصفوفة بناءً على الاسم
+    const filtered = allProducts.filter(product => 
+        product.productName.toLowerCase().includes(searchTerm)
+    );
+    
+    displayProducts(filtered); // إعادة عرض النتائج المفلترة فقط
+}
 
-    <script>
-        function addToCart(productId) {{
-            window.chrome.webview.postMessage({{
-                type: 'ADD_TO_CART',
-                id: productId
-            }});
-        }}
+function addToCart(productId){
+    window.chrome.webview.postMessage({
+        type:'ADD_TO_CART',
+        id:productId
+    });
+}
+function viewDetails(productId) {
+    window.chrome.webview.postMessage({
+        type: 'VIEW_DETAILS',
+        id: productId
+    });
+}
+function logout() {
+    if(confirm('Are you sure you want to logout?')) {
+        window.chrome.webview.postMessage({ type: 'LOGOUT' });
+    }
+}
+window.onload = () => {
+    window.chrome.webview.postMessage({ type:'LOAD_PRODUCTS' });
+};
 
-        function onPay() {{
-            window.chrome.webview.postMessage({{ type: 'PAY_ACTION' }});
-        }}
-    </script>
+</script>
+
 </body>
 </html>";
 
-            webView.NavigateToString(htmlContent);
+            webView.CoreWebView2.NavigateToString(htmlContent);
         }
 
-        private string GenerateProductCards()
+        private async Task LoadProducts()
         {
-            string cards = "";
-            for (int i = 0; i < 6; i++)
-            {
-                cards += @"
-                <div class='col-12 col-sm-6 col-md-4'>
-                    <div class='product-card'>
-                        <div class='product-img-wrapper'>
-                            <img src='https://cdn.dxomark.com/wp-content/uploads/medias/post-155689/Apple-iPhone-15-Pro-Max_blue-titanium_featured-image.jpg' class='product-img'>
-                        </div>
-                        <div class='product-info text-center'>
-                            <div class='product-title'>Go - Natural Titanium 15 iPhone</div>
-                            <div class='product-price'>10,000 EGP</div>
-                            <button class='btn-add-cart' onclick='addToCart(" + i + @")'>
-                                <i class='bi bi-cart-plus'></i> Add To Cart
-                            </button>
-                        </div>
-                    </div>
-                </div>";
-            }
-            return cards;
-        }
+            var products = await _productService.GetAll();
 
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
-        {
-            using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
+            var data = new
             {
-                string type = doc.RootElement.GetProperty("type").GetString();
-                if (type == "ADD_TO_CART")
-                {
+                type = "RENDER_PRODUCTS",
+                products = products
+            };
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            string json = JsonSerializer.Serialize(data, options);
+
+            webView.CoreWebView2.PostWebMessageAsJson(json);
+        }
+        private void SetCustomerInfo()
+        {
+            var data = new { type = "SET_CUSTOMER_NAME", name = UserSession.CustomerName };
+            string json = JsonSerializer.Serialize(data);
+            webView.CoreWebView2.PostWebMessageAsJson(json);
+        }
+        private async void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            using JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson);
+            string type = doc.RootElement.GetProperty("type").GetString();
+
+            switch (type)
+            {
+                case "LOAD_PRODUCTS":
+                    await LoadProducts();
+                    SetCustomerInfo();
+                    break;
+
+                case "ADD_TO_CART":
                     int id = doc.RootElement.GetProperty("id").GetInt32();
                     MessageBox.Show($"تم إضافة المنتج رقم {id} إلى السلة بنجاح!");
-                }
+                    break;
+                case "GO_TO_ORDERS":
+                     var ordersForm = new MyOrdersForm(_OrderService);
+                     ordersForm.Show();
+                    break;
+                case "VIEW_DETAILS":
+                    int productId = doc.RootElement.GetProperty("id").GetInt32();
+                    var p=await _productService.GetProductDetails(productId);
+                    var productDetailsForm=new ProductDetailsForm(p);
+                    productDetailsForm.Show();
+                    break;
+                case "LOGOUT":
+                    UserSession.CustomerId = 0;
+                    UserSession.CustomerName = string.Empty;
+                    this.Hide(); 
+                    var loginForm = new LoginForm();
+                    loginForm.Show();
+                    //this.Close(); 
+                    break;
             }
         }
     }

@@ -1,16 +1,8 @@
 ﻿using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Presentation.Client;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace ECommerceApp.Presentation.Admin
 {
@@ -19,16 +11,18 @@ namespace ECommerceApp.Presentation.Admin
         private WebView2 webView;
         private readonly ICategoryService _categoryService;
         private readonly IProductService _productService;
+        private readonly IOrderService _orderService;
 
-        public DashboardForm(ICategoryService categoryService, IProductService productService)
+        public DashboardForm(ICategoryService categoryService, IProductService productService,IOrderService orderService)
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Administrator Dashboard";
             this.WindowState = FormWindowState.Maximized;
             _categoryService = categoryService;
             _productService = productService;
-
+            _orderService = orderService;
             InitializeWebView();
+
         }
         private async void InitializeWebView()
         {
@@ -87,7 +81,10 @@ namespace ECommerceApp.Presentation.Admin
             <a href='#' class='nav-link' onclick='navigate(""admin"")'><i class='bi bi-person-gear'></i> Admin Management</a>
         </nav>
 <div class='user-profile d-flex align-items-center justify-content-center'>
-    <button class='btn btn-link text-danger p-0' title='تسجيل الخروج' style='text-decoration: none;'>
+    <button class='btn btn-link text-danger p-0' 
+            onclick='logout()' 
+            title='تسجيل الخروج' 
+            style='text-decoration: none;'>
         <i class='bi bi-box-arrow-right' style='font-size: 1.1rem; cursor: pointer;'></i>
         LogOut
     </button>
@@ -155,6 +152,9 @@ namespace ECommerceApp.Presentation.Admin
     </div>
 
     <script>
+function logout() {
+        window.chrome.webview.postMessage({ action: 'LOGOUT' });
+    }
         function navigate(page) {
             window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page });
         }
@@ -174,6 +174,19 @@ namespace ECommerceApp.Presentation.Admin
                     string page = doc.RootElement.GetProperty("page").GetString();
                     HandleNavigation(page);
                 }
+                else if (action == "LOGOUT")
+                {
+                    var result = MessageBox.Show("هل أنت متأكد من تسجيل الخروج؟", "تأكيد",
+                                                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                    if (result == DialogResult.Yes)
+                    {
+                        var loginForm = new LoginForm();
+                        loginForm.Show();
+
+                        this.Close();
+                    }
+                }
             }
         }
 
@@ -182,15 +195,15 @@ namespace ECommerceApp.Presentation.Admin
             switch (page)
             {
                 case "categories":
-                    new CategoryForm(_categoryService).Show();
+                    new CategoryForm(_categoryService, _productService, _orderService).Show();
                     this.Hide();
                     break;
                 case "products":
-                    new ProductForm(_productService, _categoryService).Show();
+                    new ProductForm(_productService, _categoryService,_orderService).Show();
                     this.Hide();
                     break;
                 case "orders":
-                    new OrderForm().Show();
+                    new OrderForm(_orderService,_productService, _categoryService).Show();
                     this.Hide();
                     break;
                 case "users":

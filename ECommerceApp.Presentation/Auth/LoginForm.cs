@@ -1,8 +1,13 @@
 ﻿using ECommerceApp.Application.DTOs.Customer;
 using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Services;
+using ECommerceApp.Domain.Entities;
+using ECommerceApp.Infrastructure.Data;
 using ECommerceApp.Infrastructure.Enums;
+using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Presentation.Admin;
 using ECommerceApp.Presentation.Auth;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Web.WebView2.WinForms;
 using System;
 using System.Windows.Forms;
@@ -15,11 +20,16 @@ namespace ECommerceApp.Presentation.Client
         [System.ComponentModel.Browsable(false)]
         [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
         public ICustomerUserService UserService { get; set; }
+        private IProductService _productService;
+        private IOrderService _orderService;
+        private readonly ApplicationDbContext dbContext = new ApplicationDbContext();
+
         public LoginForm()
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Login";
             this.WindowState = FormWindowState.Maximized;
+            dbContext = new ApplicationDbContext();
             InitializeWebView();
         }
 
@@ -168,13 +178,18 @@ window.chrome.webview.addEventListener('message', function(event){
 
                             if (user != null)
                             {
-                                //UserSession.CustomerId = user.id; // تأكد أن الموديل يعيد Id
-                                //UserSession.Email = user.Email;
+                                UserSession.CustomerId = user.Id; 
+                                UserSession.CustomerName = user.FirstName;
 
                                 var successMessage = new { type = "success", message = "Login Success!" };
                                 webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
+                                var context = new ApplicationDbContext();
+                                var productRepo = new GenericRebository<Product>(context);
+                                var orderRepo = new GenericRebository<Order>(context);
+                                _productService = new ProductService(productRepo);
+                                _orderService = new OrderService(orderRepo);
 
-                                var clientForm = new CategoriesForm();
+                                var clientForm = new ProductsForm(_productService, _orderService);
                                 clientForm.Show();
                                 this.Hide();
                             }

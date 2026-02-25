@@ -206,10 +206,10 @@ namespace ECommerceApp.Presentation.Admin
                 //    new DashboardForm().Show();
                 //    this.Hide();
                 //    break;
-                case "categories":
-                    new CategoryForm(_categoryService).Show();
-                    this.Hide();
-                    break;
+                //case "categories":
+                //    new CategoryForm(_categoryService).Show();
+                //    this.Hide();
+                //    break;
                 //case "products":
                 //    new ProductForm().Show();
                 //    this.Hide();

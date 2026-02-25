@@ -22,6 +22,7 @@ namespace ECommerceApp.Presentation.Auth
         private readonly ICustomerUserService userService;
         private ICategoryService _categoryService;
         private IProductService _productService;
+        private IOrderService _orderService;
 
         public SignAdmin()
         {
@@ -161,10 +162,12 @@ window.chrome.webview.addEventListener('message', function(event){
                             var context = new ApplicationDbContext();
                             var categoryRepo = new GenericRebository<Category>(context);
                             var productRepo = new GenericRebository<Product>(context);
+                            var orderRepo = new GenericRebository<Order>(context);
                             _categoryService = new CategoryService(categoryRepo);
                             _productService = new ProductService(productRepo);
+                            _orderService = new OrderService(orderRepo);
 
-                            var adminForm = new DashboardForm(_categoryService, _productService);
+                            var adminForm = new DashboardForm(_categoryService, _productService, _orderService);
                             adminForm.Show();
 
                             this.Hide();

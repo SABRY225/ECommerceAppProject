@@ -11,11 +11,14 @@ namespace ECommerceApp.Presentation.Admin
         private WebView2 webView;
         private readonly ICategoryService _categoryService;
         private readonly IProductService _productService;
+        private readonly IOrderService _orderService;
 
-        public CategoryForm(ICategoryService categoryService)
+        public CategoryForm(ICategoryService categoryService,IProductService productService,IOrderService orderService)
         {
             InitializeComponent();
             _categoryService = categoryService;
+            _productService = productService;
+            _orderService = orderService;
             this.Text = "Category Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
@@ -34,134 +37,267 @@ namespace ECommerceApp.Presentation.Admin
 
             string htmlContent = @"
             <!DOCTYPE html>
-<html lang='en'>
+<html lang=""en"">
 <head>
-    <meta charset='UTF-8'>
-    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
-    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'>
-    <style>
-        :root { --sidebar-bg: #1e3a58; --main-bg: #f4f7f9; --text-light: #a5b4c1; --primary: #0d6efd; }
-        body { background-color: var(--main-bg); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; }
-        .btn-back { 
-                        background: white; border: 1px solid #dee2e6; color: var(--secondary); 
-                        padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; 
-                    }
-                    .btn-back:hover { background: #f8f9fa; color: #000; }
-        .sidebar-header { padding: 30px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .nav-link { color: var(--text-light); padding: 15px 25px; text-decoration: none; display: flex; align-items: center; gap: 15px; transition: 0.3s; }
-        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; }
-        .main { flex: 1; padding: 40px; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        th { text-align: left; background: #f1f5f9; padding: 15px; color: #475569; font-size: 13px; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-        .badge { background: #e2e8f0; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-        .actions button { background: none; border: none; cursor: pointer; color: #64748b; margin-right: 10px; font-size: 18px; }
-        .actions button:hover { color: var(--primary); }
-        .actions .btn-delete:hover { color: #ef4444; }
-    </style>
+<meta charset=""UTF-8"">
+<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+<link href=""https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"" rel=""stylesheet"">
+<link rel=""stylesheet"" href=""https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"">
+
+<style>
+:root{
+    --primary:#0d6efd;
+    --bg:#f4f7f9;
+    --card-bg:#ffffff;
+    --text-muted:#6c757d;
+}
+
+body{
+    background:var(--bg);
+    font-family:'Segoe UI',sans-serif;
+    margin:0;
+    padding:30px;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+}
+
+.btn-add{
+    background:var(--primary);
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+    font-weight:600;
+    transition:.2s;
+}
+.btn-add:hover{
+    opacity:.9;
+}
+
+.category-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:25px;
+}
+
+.category-card{
+    background:var(--card-bg);
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+    transition:.3s ease;
+    display:flex;
+    flex-direction:column;
+}
+
+.category-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 8px 25px rgba(0,0,0,.1);
+}
+
+.category-img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+}
+
+.category-body{
+    padding:20px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+.category-title{
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:10px;
+}
+
+.category-desc{
+    font-size:14px;
+    color:var(--text-muted);
+    margin-bottom:15px;
+}
+
+.category-actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.category-actions button{
+    border:none;
+    background:none;
+    font-size:18px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.btn-edit:hover{ color:var(--primary); }
+.btn-delete:hover{ color:#dc3545; }
+
+.stat-box{
+    background:white;
+    padding:15px 20px;
+    border-radius:10px;
+    margin-bottom:25px;
+    box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+.btn-back{
+    background:white;
+    border:1px solid #dee2e6;
+    width:45px;
+    height:45px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.btn-back:hover{
+    background:#f1f5f9;
+    transform:translateX(-3px);
+}
+</style>
 </head>
+
 <body>
-    <div class='main'>
-              <div class='header'>
-                        <div class='header-title-section'>
-                            <button class='btn-back' onclick='goBack()' title='Return to Dashboard'>
-                                <i class='bi bi-arrow-left'></i> Back
-                            </button>
-                            <div>
-                                <h1 style='margin:0; font-size: 1.8rem;'>Category Management</h1>
-                                <p style='color:#64748b; margin:0;'>View and manage your product categories</p>
-                            </div>
-                        </div>
-                        <button class='btn-add' onclick='addCategory()'>
-                            <i class='bi bi-plus-lg'></i> Add New Category
-                        </button>
-                    </div>
 
-        <div class='stats'>
-            <div class='card'><small>Total Categories</small><h2 id='statCount'>0</h2></div>
+<div class=""header"">
+
+    <div class=""d-flex align-items-center gap-3"">
+        <button class=""btn-back"" onclick=""goBack()"">
+            <i class=""bi bi-arrow-left""></i>
+        </button>
+
+        <div>
+            <h2 style=""margin:0;"">Category Management</h2>
+            <small class=""text-muted"">Manage your product categories easily</small>
         </div>
-
-        <table>
-            <thead>
-                <tr><th>ID</th><th>NAME</th><th>DESCRIPTION</th><th>Image</th><th>ACTIONS</th></tr>
-            </thead>
-            <tbody id=""categoryTable"">
-                <tr><td colspan='4' class='text-center'>Loading categories...</td></tr>
-            </tbody>
-        </table>
     </div>
 
-    <script>
-        // استقبال البيانات من C#
-        window.chrome.webview.addEventListener('message', event => {
-            const data = event.data;
-            if (data.action === ""LOAD_CATEGORIES"") {
-                const table = document.getElementById(""categoryTable"");
-                const statCount = document.getElementById(""statCount"");
-                let rows = """";
-                
-                statCount.innerText = data.categories.length;
+    <button class=""btn-add"" onclick=""addCategory()"">
+        <i class=""bi bi-plus-lg""></i> Add Category
+    </button>
 
-                if(data.categories.length === 0) {
-                    rows = ""<tr><td colspan='4' class='text-center'>No categories found</td></tr>"";
-                } else {
-                    data.categories.forEach(cat => {
-                        rows += `
-                            <tr>
-                                <td style='color:#94a3b8'>#${cat.id}</td>
-                                <td><b>${cat.categoryName || 'No Name'}</b></td>
-                                <td>${cat.description || '-'}</td>                                
-                                <td>${cat.imagePath || '-'}</td>
-                                <td class='actions'>
-                                    <button onclick='editCategory(${cat.id}, ""${cat.categoryName}"", ""${cat.description || ''}"",""${cat.imagePath}"")'>✎</button>
-                                    <button class='btn-delete' onclick='deleteCategory(${cat.id})'>🗑</button>
-                                </td>
-                            </tr>`;
-                    });
-                }
-                table.innerHTML = rows;
-            }
+</div>
+
+<div class=""stat-box"">
+    <strong>Total Categories: </strong>
+    <span id=""statCount"">0</span>
+</div>
+
+<div class=""category-grid"" id=""categoryContainer"">
+    <!-- Categories Render Here -->
+</div>
+
+<script>
+window.chrome.webview.addEventListener('message', event => {
+    const data = event.data;
+
+    if(data.action === ""LOAD_CATEGORIES""){
+        const container = document.getElementById(""categoryContainer"");
+        const statCount = document.getElementById(""statCount"");
+
+        statCount.innerText = data.categories.length;
+
+        let cards = """";
+
+        if(data.categories.length === 0){
+            container.innerHTML = ""<p>No categories found</p>"";
+            return;
+        }
+
+        data.categories.forEach(cat => {
+            cards += `
+            <div class=""category-card"">
+                <img src=""${cat.imagePath || 'https://via.placeholder.com/400x200?text=No+Image'}"" 
+                     class=""category-img""
+                     onerror=""this.src='https://via.placeholder.com/400x200?text=No+Image'"">
+
+                <div class=""category-body"">
+                    <div>
+                        <div class=""category-title"">${cat.categoryName}</div>
+                        <div class=""category-desc"">${cat.description || '-'}</div>
+                    </div>
+
+                    <div class=""category-actions"">
+                        <button class=""btn-edit"" 
+                            onclick='editCategory(${cat.id},""${cat.categoryName}"",""${cat.description || ''}"",""${cat.imagePath || ''}"")'>
+                            <i class=""bi bi-pencil-square""></i>
+                        </button>
+
+                        <button class=""btn-delete"" 
+                            onclick=""deleteCategory(${cat.id})"">
+                            <i class=""bi bi-trash""></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
         });
 
-        function addCategory() {
-            const name = prompt(""Enter Category Name:"");
-            const desc = prompt(""Enter Description:"");            
-            const image = prompt(""Enter Image Url:"");
+        container.innerHTML = cards;
+    }
+});
+function goBack(){
+    window.chrome.webview.postMessage({ action:""GO_BACK"" });
+}
+function addCategory(){
+    const name = prompt(""Category Name:"");
+    const desc = prompt(""Description:"");
+    const image = prompt(""Image URL:"");
 
-            if (name) {
-                window.chrome.webview.postMessage({ action: ""ADD_CATEGORY"", name: name, description: desc,image:image });
-            }
-        }
+    if(name){
+        window.chrome.webview.postMessage({
+            action:""ADD_CATEGORY"",
+            name:name,
+            description:desc,
+            image:image
+        });
+    }
+}
 
-        function editCategory(id, oldName, oldDesc,oldImage) {
-            const name = prompt(""Edit Name:"", oldName);
-            const desc = prompt(""Edit Description:"", oldDesc);            
-            const image = prompt(""Edit Image url:"", oldImage);
+function editCategory(id,name,desc,image){
+    const newName = prompt(""Edit Name:"",name);
+    const newDesc = prompt(""Edit Description:"",desc);
+    const newImage = prompt(""Edit Image URL:"",image);
 
-            if (name) {
-                window.chrome.webview.postMessage({ action: ""UPDATE_CATEGORY"", id: id, name: name, description: desc,image:image });
-            }
-        }
+    if(newName){
+        window.chrome.webview.postMessage({
+            action:""UPDATE_CATEGORY"",
+            id:id,
+            name:newName,
+            description:newDesc,
+            image:newImage
+        });
+    }
+}
 
-        function deleteCategory(id) {
-            if (confirm(""Are you sure you want to delete this category?"")) {
-                window.chrome.webview.postMessage({ action: ""DELETE_CATEGORY"", id: id });
-            }
-        }
-        function goBack() {
-                        window.chrome.webview.postMessage({ action: ""GO_BACK"" });
-         }
- 
-        // إرسال طلب تحميل البيانات بمجرد جاهزية الصفحة
-        window.onload = () => {
-            window.chrome.webview.postMessage({ action: ""LOAD"" });
-        };
-    </script>
+function deleteCategory(id){
+    if(confirm(""Delete this category?"")){
+        window.chrome.webview.postMessage({
+            action:""DELETE_CATEGORY"",
+            id:id
+        });
+    }
+}
+
+window.onload = () => {
+    window.chrome.webview.postMessage({action:""LOAD""});
+};
+</script>
+
 </body>
 </html>";
 
@@ -215,7 +351,7 @@ namespace ECommerceApp.Presentation.Admin
                         break;
 
                     case "GO_BACK":
-                        var adminForm = new DashboardForm(_categoryService, _productService);
+                        var adminForm = new DashboardForm(_categoryService,_productService,_orderService);
                         adminForm.Show();
                         this.Hide();
                         break;

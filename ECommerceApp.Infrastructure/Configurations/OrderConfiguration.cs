@@ -16,7 +16,7 @@ namespace ECommerceApp.Infrastructure.Configurations
                 .HasColumnType("decimal(18,2)");
 
             builder.Property(o => o.State)
-                .HasConversion<int>()
+                .HasConversion<string>()
                 .IsRequired();
 
             builder.HasOne(o => o.User)
