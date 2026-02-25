@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.DTOs.Cart;
 using ECommerceApp.Application.DTOs.CategoryDtos;
+using ECommerceApp.Application.DTOs.Customer;
 using ECommerceApp.Application.DTOs.Order;
 using ECommerceApp.Application.DTOs.ProductDtos;
 using ECommerceApp.Domain.Entities;
@@ -38,7 +39,7 @@ namespace ECommerceApp.Application.Mapper
             TypeAdapterConfig<Order, GetOrderDto>.NewConfig()
                 .Map(dest => dest.ProductsCount, src => src.OrderProducts.Count)
                 .Map(dest => dest.ProductsDetails, src => src.OrderProducts)
-                .Map(dest => dest.CustomerName, src => src.User.FirstName + src.User.LastName);
+                .Map(dest => dest.CustomerName, src => src.User.FirstName + " " + src.User.LastName);
 
 
 
@@ -55,6 +56,13 @@ namespace ECommerceApp.Application.Mapper
                 .NewConfig()
                 .Map(dest => dest.UserId, src => src.UserId)
                 .Map(dest => dest.CartProducts, src => src.CartProducts);
+
+            TypeAdapterConfig<User, CustomerForAdminDto>
+                .NewConfig()
+                .Map(dest => dest.Name, src => src.FirstName + " " + src.LastName)
+                .Map(dest => dest.JoinDate, src => src.CreatedAt)
+                .Map(dest => dest.Email, src => src.Email)
+                .Map(dest => dest.TotalOrders, src => src.Orders.Count);
         }
 
     }

@@ -11,5 +11,6 @@ namespace ECommerceApp.Application.DTOs.Cart
     {
         public int UserId { get; set; }
         public List<CartProductDto> CartProducts { get; set; }
+        public decimal TotalAmount { get; set; }
     }
 }
