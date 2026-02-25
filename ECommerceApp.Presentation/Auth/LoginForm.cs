@@ -166,13 +166,18 @@ window.chrome.webview.addEventListener('message', function(event){
                         {
                             var user = UserService.Login(data);
 
-                            var successMessage = new { type = "success", message = "Login Success!" };
-                            webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
+                            if (user != null)
+                            {
+                                //UserSession.CustomerId = user.id; // تأكد أن الموديل يعيد Id
+                                //UserSession.Email = user.Email;
 
-                            var clientForm = new CategoriesForm();
-                            clientForm.Show();
+                                var successMessage = new { type = "success", message = "Login Success!" };
+                                webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
 
-                            this.Hide();
+                                var clientForm = new CategoriesForm();
+                                clientForm.Show();
+                                this.Hide();
+                            }
                         }
                         catch (Exception ex)
                         {

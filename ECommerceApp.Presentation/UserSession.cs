@@ -6,7 +6,17 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Presentation
 {
-    internal class UserSession
+    public static class UserSession
     {
+        public static int CustomerId { get; set; }
+        public static string CustomerName { get; set; }
+        public static string Email { get; set; }
+
+        public static void Logout()
+        {
+            CustomerId = 0;
+            CustomerName = null;
+            Email = null;
+        }
     }
 }

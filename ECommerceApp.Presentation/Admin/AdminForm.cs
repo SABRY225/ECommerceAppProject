@@ -210,18 +210,18 @@ namespace ECommerceApp.Presentation.Admin
                     new CategoryForm(_categoryService).Show();
                     this.Hide();
                     break;
-                case "products":
-                    new ProductForm().Show();
-                    this.Hide();
-                    break;
-                case "orders":
-                    new OrderForm().Show();
-                    this.Hide();
-                    break;
-                case "users":
-                    new CustomerForm().Show();
-                    this.Hide();
-                    break;
+                //case "products":
+                //    new ProductForm().Show();
+                //    this.Hide();
+                //    break;
+                //case "orders":
+                //    new OrderForm().Show();
+                //    this.Hide();
+                //    break;
+                //case "users":
+                //    new CustomerForm().Show();
+                //    this.Hide();
+                //    break;
                 default:
                     MessageBox.Show($"Opening {page} view...");
                     break;

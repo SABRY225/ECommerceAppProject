@@ -29,7 +29,7 @@ namespace ECommerceApp.Application.Services
         public async Task Delete(int id)
         {
             var deletedProduct = await _genericRebository.GetAll().FirstOrDefaultAsync(p=>p.Id==id);
-            if (deletedProduct != null) return;
+            if (deletedProduct == null) return;
             await _genericRebository.Delete(deletedProduct);
         }
         public async Task Update(UpdateProductDto productDto)
@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Services
         }
         public async Task<GetProductDetailsDto> GetProductDetails(int id)
         {
-            var product = await _genericRebository.GetByIdAsyc(id);
+            var product = await _genericRebository.GetByIdAsync(id, includes: [product=>product.Category]);
             return product.Adapt<GetProductDetailsDto>();
         }
         public async Task<List<GetProductDetailsDto>> GetProductsByName(string name)

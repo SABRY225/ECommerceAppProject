@@ -213,22 +213,22 @@ namespace ECommerceApp.Presentation.Admin
                 //    new DashboardForm().Show();
                 //    this.Hide();
                 //    break;
-                case "products":
-                    new ProductForm().Show();
-                    this.Hide();
-                    break;
-                case "orders":
-                    new OrderForm().Show();
-                    this.Hide();
-                    break;
-                case "categories":
-                    new CategoryForm(_categoryService).Show();
-                    this.Hide();
-                    break;
-                case "admin":
-                    new AdminForm().Show();
-                    this.Hide();
-                    break;
+                //case "products":
+                //    new ProductForm().Show();
+                //    this.Hide();
+                //    break;
+                //case "orders":
+                //    new OrderForm().Show();
+                //    this.Hide();
+                //    break;
+                //case "categories":
+                //    new CategoryForm(_categoryService).Show();
+                //    this.Hide();
+                //    break;
+                //case "admin":
+                //    new AdminForm().Show();
+                //    this.Hide();
+                //    break;
                 default:
                     MessageBox.Show($"Opening {page} view...");
                     break;

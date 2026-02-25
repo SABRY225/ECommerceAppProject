@@ -20,12 +20,13 @@ namespace ECommerceApp.Presentation.Admin
         private readonly ICategoryService _categoryService;
         private readonly IProductService _productService;
 
-        public DashboardForm(ICategoryService categoryService)
+        public DashboardForm(ICategoryService categoryService, IProductService productService)
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Administrator Dashboard";
             this.WindowState = FormWindowState.Maximized;
             _categoryService = categoryService;
+            _productService = productService;
 
             InitializeWebView();
         }
@@ -185,7 +186,7 @@ namespace ECommerceApp.Presentation.Admin
                     this.Hide();
                     break;
                 case "products":
-                    new ProductForm(_productService).Show();
+                    new ProductForm(_productService, _categoryService).Show();
                     this.Hide();
                     break;
                 case "orders":

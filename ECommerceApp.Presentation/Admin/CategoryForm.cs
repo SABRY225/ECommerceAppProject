@@ -10,6 +10,7 @@ namespace ECommerceApp.Presentation.Admin
     {
         private WebView2 webView;
         private readonly ICategoryService _categoryService;
+        private readonly IProductService _productService;
 
         public CategoryForm(ICategoryService categoryService)
         {
@@ -214,7 +215,7 @@ namespace ECommerceApp.Presentation.Admin
                         break;
 
                     case "GO_BACK":
-                        var adminForm = new DashboardForm(_categoryService);
+                        var adminForm = new DashboardForm(_categoryService, _productService);
                         adminForm.Show();
                         this.Hide();
                         break;
@@ -247,10 +248,6 @@ namespace ECommerceApp.Presentation.Admin
                         await _categoryService.Delete(id);
                         await LoadCategories();
                         break;
-
-                    //case "NAVIGATE":
-                    //    HandleNavigation(doc.RootElement.GetProperty("page").GetString());
-                    //    break;
                 }
             }
             catch (Exception ex)
