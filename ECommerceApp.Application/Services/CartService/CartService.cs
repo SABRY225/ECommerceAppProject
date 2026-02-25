@@ -49,6 +49,8 @@ namespace ECommerceApp.Application.Services.CartService
                 {
                     var newProduct = request.Adapt<CartProduct>();
                     cart.CartProducts.Add(newProduct);
+                    exitINStock.StockQuantity -= request.Quantity;
+
                 }
 
                 CartRepository.SaveChange();
