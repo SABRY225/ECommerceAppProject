@@ -31,23 +31,29 @@ namespace ECommerceApp.Application.Services.CartService
                 CartRepository.Add(cart);
             }
 
-
-            var existingItem = cart.CartProducts.FirstOrDefault(cp => cp.ProductId == request.ProductId);
-
-            if (existingItem != null)
+            
+            var exitINStock = cart.CartProducts.Select(e => e.Product).Where(e => e.StockQuantity > 0).FirstOrDefault(e => e.Id == request.ProductId);
+            if (exitINStock != null)
             {
-                existingItem.Quantity += request.Quantity;
-                existingItem.Date = DateTime.Now;
-            }
-            else
-            {
-                var newProduct = request.Adapt<CartProduct>();
-                cart.CartProducts.Add(newProduct);
-            }
 
-            CartRepository.SaveChange();
+
+                var existingItem = cart.CartProducts.FirstOrDefault(cp => cp.ProductId == request.ProductId);
+
+                if (existingItem != null)
+                {
+                    existingItem.Quantity += request.Quantity;
+                    existingItem.Date = DateTime.Now;
+                    existingItem.Product.StockQuantity -= request.Quantity;
+                }
+                else
+                {
+                    var newProduct = request.Adapt<CartProduct>();
+                    cart.CartProducts.Add(newProduct);
+                }
+
+                CartRepository.SaveChange();
+            }
         }
-
         public CartResponseDto GetCustomerCartByID(int userId)
         {
             var Cart_CartProduct_Product = CartRepository.GetCartByCustomerId(userId);
