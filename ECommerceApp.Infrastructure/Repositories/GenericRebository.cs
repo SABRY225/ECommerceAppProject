@@ -62,5 +62,10 @@ namespace ECommerceApp.Infrastructure.Repositories
             await _context.SaveChangesAsync();
 
          }
+
+        public async Task<bool> SaveAsync()
+        {
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }
