@@ -3,5 +3,4 @@
   <Project Path="ECommerceApp.Domain/ECommerceApp.Domain.csproj" />
   <Project Path="ECommerceApp.Infrastructure/ECommerceApp.Infrastructure.csproj" />
   <Project Path="ECommerceApp.Presentation/ECommerceApp.Presentation.csproj" />
-  <Project Path="resention/resention.csproj" Id="2f2f31fb-4330-4527-b646-305d20fa68de" />
 </Solution>
