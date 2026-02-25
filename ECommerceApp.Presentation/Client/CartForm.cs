@@ -198,8 +198,8 @@ namespace ECommerceApp.Presentation.Client
     });
 }
         function checkout() {
-            window.chrome.webview.postMessage({ action: 'CHECKOUT' });
-        }
+    window.chrome.webview.postMessage({ action: 'CHECKOUT' });
+}
 function goBack() {
     window.chrome.webview.postMessage({ action: 'CLOSE_FORM' });
 }
@@ -226,7 +226,7 @@ function goBack() {
                     quantity = p.Quantity,
                     itemTotal = p.ItemTotal
                 }).ToList(),
-                total = cart.CartProducts.Sum(p => p.ItemTotal) * 1.15m
+                total = cart.CartProducts.Sum(p => p.ItemTotal) 
             };
 
             string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
@@ -265,7 +265,29 @@ function goBack() {
 
                 else if (action == "CHECKOUT")
                 {
-                    MessageBox.Show("Processing your order...");
+                 
+                            // 3. Execute the order creation logic
+                            string result = await _OrderService.CreateOrder(UserSession.CustomerId);
+
+                            if (result == "done")
+                            {
+                                MessageBox.Show(
+                                    "Your order has been placed successfully!",
+                                    "Success",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information);
+
+                                this.Close(); // Close the cart and return to store
+                            }
+                            else
+                            {
+                                // Display the specific error message returned (e.g., out of stock)
+                                MessageBox.Show(
+                                    $"Order Failed: {result}",
+                                    "Checkout Error",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Warning);
+                            }
                 }
             }
         }

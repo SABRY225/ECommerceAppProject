@@ -187,7 +187,7 @@ body {
 <div class='bottom-bar shadow'>
     <div>
         <i class=""bi bi-cart3 me-2""></i>
-        <strong>Items Count:</strong> <span id='totalPrice'>0</span> 
+        <strong>Total Amount:</strong> <span id='totalPrice'>0</span> EGP 
     </div>
     <button class=""btn btn-primary"" onclick=""checkout()"">Checkout</button>
 </div>
@@ -309,29 +309,15 @@ window.onload = () => {
         private async Task LoadCart()
         {
             var cart = await _cartService.GetCustomerCart(UserSession.CustomerId);
-            if(cart != null)
-            {
-                var itemsCount = cart.CartProducts.Sum(p => p.Quantity);
                 var data = new
                 {
                     type = "UPDATE_CART_UI",
-                    itemsCount = itemsCount,
+                    itemsCount = cart.TotalAmount,
                 };
 
                 string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
                 webView.CoreWebView2.PostWebMessageAsJson(json);
-            }
-            else
-            {
-                var data = new
-                {
-                    type = "UPDATE_CART_UI",
-                    itemsCount = 0,
-                };
-
-                string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-                webView.CoreWebView2.PostWebMessageAsJson(json);
-            }
+           
 
         }
         private void SetCustomerInfo()
@@ -390,10 +376,7 @@ window.onload = () => {
                 case "LOGOUT":
                     UserSession.CustomerId = 0;
                     UserSession.CustomerName = string.Empty;
-                    this.Hide(); 
-                    var loginForm = new LoginForm();
-                    loginForm.Show();
-                    //this.Close(); 
+                    System.Windows.Forms.Application.Exit();
                     break;
             }
         }

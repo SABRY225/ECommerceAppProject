@@ -2,17 +2,75 @@
 using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Domain.Entities;
+using ECommerceApp.Infrastructure.Enums;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Application.Services
 {
-    public class OrderService(IGenericRebository<Order> orderRebository) : IOrderService
+    public class OrderService(IGenericRebository<Order> orderRebository,
+        IGenericRebository<Cart> cartRebository,
+        IGenericRebository<Product> productRebository) : IOrderService
     {
         private readonly IGenericRebository<Order> _orderService = orderRebository;
-        public Task<bool> CreateOrder(int cartId)
+        private readonly IGenericRebository<Cart> _cartService = cartRebository;
+        private readonly IGenericRebository<Product> _productService = productRebository;
+
+
+        public async Task<string> CreateOrder(int userId)
         {
-            throw new NotImplementedException();
+            var cart = await _cartService
+        .FindAsync(c => c.UserId == userId && !c.IsDeleted)
+        .Include(c => c.CartProducts)
+        .ThenInclude(cp => cp.Product)
+        .FirstOrDefaultAsync();
+
+            if (cart == null)
+                return "cart not found";
+
+            if (cart.CartProducts.Count == 0)
+                return "cart is empty";
+
+            foreach (var item in cart.CartProducts)
+            {
+                if (item.Product.StockQuantity < item.Quantity)
+                    return $"quantity in stock less than your order in {item.Product.ProductName}";
+            }
+
+            var order = new Order
+            {
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false,
+                OrderDate = DateTime.UtcNow,
+                State = "1",
+                TotalAmount = cart.CartProducts.Sum(cp => cp.Quantity * cp.Product.Price),
+                UserId = cart.UserId,
+                OrderProducts = []
+            };
+
+            foreach (var item in cart.CartProducts)
+            {
+                order.OrderProducts.Add(new OrderProduct
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    PriceAtPurchase = item.Product.Price
+                });
+
+                item.Product.StockQuantity -= item.Quantity;
+            }
+
+            await _orderService.Add(order);
+
+            //var result = await _orderService.SaveAsync();
+
+            //if (!result)
+            //    return "failed";
+
+            cart.CartProducts.Clear();
+            await _cartService.SaveAsync();
+
+            return "done";
         }
 
         public async Task<List<GetOrderDto>> GetAllOrders()
@@ -20,6 +78,7 @@ namespace ECommerceApp.Application.Services
             var orders = await _orderService.GetAll()
                 .Include(o=>o.OrderProducts)
                 .ThenInclude(op=>op.Product)
+                .Include(o=>o.User)
                 .ToListAsync();
             return orders.Adapt<List<GetOrderDto>>();
         }
@@ -30,6 +89,7 @@ namespace ECommerceApp.Application.Services
                 .FindAsync(o => o.UserId == cuatomerId)
                 .Include(o => o.OrderProducts)
                 .ThenInclude(op => op.Product)
+                .Include(o => o.User)
                 .ToListAsync();
 
             List<GetOrderDto> orderDtos = [];
@@ -64,7 +124,9 @@ namespace ECommerceApp.Application.Services
         public async Task<GetOrderDto> GetOrder(int id)
         {
             var product = await _orderService.FindAsync(o=>o.Id == id).Include(o => o.OrderProducts)
-                .ThenInclude(op => op.Product).FirstOrDefaultAsync();
+                .ThenInclude(op => op.Product)
+                .Include(o=>o.User)
+                .FirstOrDefaultAsync();
             return product.Adapt<GetOrderDto>();
         }
 

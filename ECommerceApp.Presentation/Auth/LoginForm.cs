@@ -186,7 +186,7 @@ window.chrome.webview.addEventListener('message', function(event){
                                 var orderRepo = new GenericRebository<Order>(context);
                                 var cartRepo = new GenericRebository<Cart>(context);
                                 _productService = new ProductService(productRepo);
-                                _orderService = new OrderService(orderRepo);
+                                _orderService = new OrderService(orderRepo, cartRepo, productRepo);
                                 _cartService = new CartService(cartRepo, productRepo);
 
                                 var clientForm = new ProductsForm(_productService, _orderService, _cartService);

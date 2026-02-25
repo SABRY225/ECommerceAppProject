@@ -1,7 +1,9 @@
 ﻿using ECommerceApp.Application.DTOs.Customer;
+using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
 using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Presentation.Auth;
@@ -24,8 +26,9 @@ namespace ECommerceApp.Presentation.Client
             InitializeComponent();
 
             dbContext = new ApplicationDbContext();
+            IGenericRebository<User> _genericRebository = new GenericRebository<User>(dbContext);
             userRepository = new CustomerUserRepository(dbContext);
-            userService = new CustomerUserService(userRepository);
+            userService = new CustomerUserService(userRepository, _genericRebository);
 
             this.Text = "E-Comm Suite - Register Client";
             this.WindowState = FormWindowState.Maximized;

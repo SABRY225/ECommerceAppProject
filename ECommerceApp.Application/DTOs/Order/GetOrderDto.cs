@@ -15,5 +15,7 @@ namespace ECommerceApp.Application.DTOs.Order
         public string State { get; set; }
         public int ProductsCount { get; set; }
         public List<OrderProductDto> OrderProducts { get; set; }
+        public string CustomerName { get; set; }
+        //public List<OrderProductDto> ProductsDetails { get; set; }
     }
 }

@@ -13,5 +13,6 @@ namespace ECommerceApp.Application.Interfaces.Services
     {
         public CustomerDto Login(LoginUserDto user);
         public void RegisterAccount(RegitserCustomerUserDto userDto);
+        public Task<List<CustomerForAdminDto>> Customers();
     }
 }

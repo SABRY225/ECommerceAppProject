@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.DTOs.Customer;
+using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Application.Services;
@@ -23,13 +24,15 @@ namespace ECommerceApp.Presentation.Auth
         private ICategoryService _categoryService;
         private IProductService _productService;
         private IOrderService _orderService;
+        private ICartService _cartService;
 
         public SignAdmin()
         {
             InitializeComponent();
             dbContext = new ApplicationDbContext();
+            IGenericRebository<User> _genericRebository = new GenericRebository<User>(dbContext);
             userRepository = new CustomerUserRepository(dbContext);
-            userService = new CustomerUserService(userRepository);
+            userService = new CustomerUserService(userRepository, _genericRebository);
 
             this.Text = "E-Comm Suite - Admin Login";
             this.WindowState = FormWindowState.Maximized;
@@ -163,9 +166,10 @@ window.chrome.webview.addEventListener('message', function(event){
                             var categoryRepo = new GenericRebository<Category>(context);
                             var productRepo = new GenericRebository<Product>(context);
                             var orderRepo = new GenericRebository<Order>(context);
+                            var cartRepo = new GenericRebository<Cart>(context);
                             _categoryService = new CategoryService(categoryRepo);
                             _productService = new ProductService(productRepo);
-                            _orderService = new OrderService(orderRepo);
+                            _orderService = new OrderService(orderRepo, cartRepo, productRepo);
 
                             var adminForm = new DashboardForm(_categoryService, _productService, _orderService);
                             adminForm.Show();

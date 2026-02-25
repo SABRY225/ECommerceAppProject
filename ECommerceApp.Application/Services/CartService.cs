@@ -67,7 +67,11 @@ namespace ECommerceApp.Application.Services
         public async Task<CartDto> GetCustomerCart(int id)
         {
             var cart = await _repo.FindAsync(c => c.UserId == id && c.IsDeleted == false).Include(c => c.CartProducts).ThenInclude(cp=>cp.Product).FirstOrDefaultAsync();
-            return cart.Adapt<CartDto>();
+            if (cart == null) return new();
+
+            var cartDto = cart.Adapt<CartDto>();
+            cartDto.TotalAmount = cartDto.CartProducts.Sum(cd => cd.ItemTotal);
+            return cartDto;
         }
 
         public async Task<bool> RemoveItem(int userId ,int id)
