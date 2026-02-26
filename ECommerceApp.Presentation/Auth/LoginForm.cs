@@ -6,8 +6,6 @@ using ECommerceApp.Infrastructure.Data;
 using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Presentation.Auth;
 using Microsoft.Web.WebView2.WinForms;
-using System;
-using System.Windows.Forms;
 
 namespace ECommerceApp.Presentation.Client
 {

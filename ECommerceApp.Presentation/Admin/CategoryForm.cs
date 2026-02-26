@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.DTOs.CategoryDtos;
 using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Services;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
@@ -12,13 +13,15 @@ namespace ECommerceApp.Presentation.Admin
         private readonly ICategoryService _categoryService;
         private readonly IProductService _productService;
         private readonly IOrderService _orderService;
+        private readonly ICustomerUserService _customerUserService;
 
-        public CategoryForm(ICategoryService categoryService,IProductService productService,IOrderService orderService)
+        public CategoryForm(ICategoryService categoryService,IProductService productService,IOrderService orderService,ICustomerUserService customerUserService)
         {
             InitializeComponent();
             _categoryService = categoryService;
             _productService = productService;
             _orderService = orderService;
+            _customerUserService = customerUserService;
             this.Text = "Category Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
@@ -29,10 +32,8 @@ namespace ECommerceApp.Presentation.Admin
             webView = new WebView2 { Dock = DockStyle.Fill };
             this.Controls.Add(webView);
 
-            // تهيئة المحرك
             await webView.EnsureCoreWebView2Async(null);
 
-            // ربط حدث استقبال الرسائل قبل تحميل المحتوى
             webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
             string htmlContent = @"
@@ -313,7 +314,7 @@ window.onload = () => {
                 var data = new
                 {
                     action = "LOAD_CATEGORIES",
-                    categories = categories // ستحول التلقائياً لـ camelCase بسبب الإعدادات أدناه
+                    categories = categories 
                 };
 
                 var options = new JsonSerializerOptions
@@ -351,7 +352,7 @@ window.onload = () => {
                         break;
 
                     case "GO_BACK":
-                        var adminForm = new DashboardForm(_categoryService,_productService,_orderService);
+                        var adminForm = new DashboardForm(_categoryService,_productService,_orderService, _customerUserService);
                         adminForm.Show();
                         this.Hide();
                         break;

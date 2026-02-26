@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.DTOs.ProductDtos;
 using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Services;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
@@ -12,13 +13,14 @@ namespace ECommerceApp.Presentation.Admin
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IOrderService _orderService;
+        private readonly ICustomerUserService _customerUserService;
 
-        public ProductForm(IProductService productService, ICategoryService categoryService, IOrderService orderService )
+        public ProductForm(IProductService productService, ICategoryService categoryService, IOrderService orderService ,ICustomerUserService customerUserService)
         {
             InitializeComponent();
             _productService = productService;
             _categoryService = categoryService;
-
+            _customerUserService = customerUserService;
             this.Text = "E-Comm Suite - Product Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
@@ -274,7 +276,7 @@ namespace ECommerceApp.Presentation.Admin
                         break;
 
                     case "GO_BACK":
-                        var adminForm = new DashboardForm(_categoryService, _productService,_orderService);
+                        var adminForm = new DashboardForm(_categoryService, _productService,_orderService, _customerUserService);
                         adminForm.Show();
                         this.Close();
                         break;

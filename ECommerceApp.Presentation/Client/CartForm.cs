@@ -211,7 +211,6 @@ function goBack() {
         }
         private async Task LoadCartData()
         {
-            // جلب بيانات السلة الحقيقية من السيرفس
             var cart = await _cartService.GetCustomerCart(UserSession.CustomerId);
 
             var data = new
@@ -277,11 +276,10 @@ function goBack() {
                                     MessageBoxButtons.OK,
                                     MessageBoxIcon.Information);
 
-                                this.Close(); // Close the cart and return to store
+                                this.Close(); 
                             }
                             else
                             {
-                                // Display the specific error message returned (e.g., out of stock)
                                 MessageBox.Show(
                                     $"Order Failed: {result}",
                                     "Checkout Error",

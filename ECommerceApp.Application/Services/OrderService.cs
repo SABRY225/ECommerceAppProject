@@ -62,11 +62,6 @@ namespace ECommerceApp.Application.Services
 
             await _orderService.Add(order);
 
-            //var result = await _orderService.SaveAsync();
-
-            //if (!result)
-            //    return "failed";
-
             cart.CartProducts.Clear();
             await _cartService.SaveAsync();
 

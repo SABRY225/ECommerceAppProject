@@ -45,13 +45,8 @@ namespace ECommerceApp.Application.Services
 
         public async Task<List<CustomerForAdminDto>> Customers()
         {
-            var customers = await _repo.GetAll().Include(u=>u.Orders).ToListAsync();
+            var customers = await _repo.FindAsync(c=>c.Role!="1").Include(u=>u.Orders).ToListAsync();
             return customers.Adapt<List<CustomerForAdminDto>>();
         }
-
-        //public void RegisterAccount(RegistorcustomerUserDto userDto)
-        //{
-        //    throw new NotImplementedException();
-        //}
     }
 }

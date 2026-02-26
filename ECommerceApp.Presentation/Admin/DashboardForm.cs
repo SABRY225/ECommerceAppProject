@@ -12,8 +12,9 @@ namespace ECommerceApp.Presentation.Admin
         private readonly ICategoryService _categoryService;
         private readonly IProductService _productService;
         private readonly IOrderService _orderService;
+        private readonly ICustomerUserService _customerUserService;
 
-        public DashboardForm(ICategoryService categoryService, IProductService productService,IOrderService orderService)
+        public DashboardForm(ICategoryService categoryService, IProductService productService,IOrderService orderService, ICustomerUserService customerUserService  )
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Administrator Dashboard";
@@ -21,8 +22,8 @@ namespace ECommerceApp.Presentation.Admin
             _categoryService = categoryService;
             _productService = productService;
             _orderService = orderService;
+            _customerUserService = customerUserService;
             InitializeWebView();
-
         }
         private async void InitializeWebView()
         {
@@ -78,7 +79,6 @@ namespace ECommerceApp.Presentation.Admin
             <a href='#' class='nav-link' onclick='navigate(""products"")'><i class='bi bi-box-seam'></i> Products</a>
             <a href='#' class='nav-link' onclick='navigate(""orders"")'><i class='bi bi-cart'></i> Orders</a>
             <a href='#' class='nav-link' onclick='navigate(""users"")'><i class='bi bi-people'></i> Users</a>
-            <a href='#' class='nav-link' onclick='navigate(""admin"")'><i class='bi bi-person-gear'></i> Admin Management</a>
         </nav>
 <div class='user-profile d-flex align-items-center justify-content-center'>
     <button class='btn btn-link text-danger p-0' 
@@ -176,14 +176,12 @@ function logout() {
                 }
                 else if (action == "LOGOUT")
                 {
-                    var result = MessageBox.Show("هل أنت متأكد من تسجيل الخروج؟", "تأكيد",
+                    var result = MessageBox.Show("Are you sure you want to log out?", "sure",
                                                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                     if (result == DialogResult.Yes)
                     {
-                        var loginForm = new LoginForm();
-                        loginForm.Show();
-
+                        System.Windows.Forms.Application.Exit();
                         this.Close();
                     }
                 }
@@ -195,24 +193,20 @@ function logout() {
             switch (page)
             {
                 case "categories":
-                    new CategoryForm(_categoryService, _productService, _orderService).Show();
-                    this.Hide();
+                    new CategoryForm(_categoryService, _productService, _orderService, _customerUserService).Show();
+                    //this.Hide();
                     break;
                 case "products":
-                    new ProductForm(_productService, _categoryService,_orderService).Show();
-                    this.Hide();
+                    new ProductForm(_productService, _categoryService,_orderService, _customerUserService).Show();
+                    //this.Hide();
                     break;
                 case "orders":
-                    new OrderForm(_orderService,_productService, _categoryService).Show();
-                    this.Hide();
+                    new OrderForm(_orderService,_productService, _categoryService, _customerUserService).Show();
+                    //this.Hide();
                     break;
                 case "users":
-                    new CustomerForm().Show();
-                    this.Hide();
-                    break;
-                case "admin":
-                    new AdminForm().Show();
-                    this.Hide();
+                    new CustomerForm(_customerUserService).Show();
+                    //this.Hide();
                     break;
                 default:
                     MessageBox.Show($"Opening {page} view...");

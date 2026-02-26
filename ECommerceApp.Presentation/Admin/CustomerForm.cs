@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Web.WebView2.WinForms;
+﻿using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Web.WebView2.Core;
 using System.Text.Json;
 using ECommerceApp.Application.Interfaces.Services;
@@ -17,10 +8,11 @@ namespace ECommerceApp.Presentation.Admin
     public partial class CustomerForm : Form
     {
         private WebView2 webView;
-
-        public CustomerForm()
+        private readonly ICustomerUserService _customerService;
+        public CustomerForm(ICustomerUserService customerService)
         {
             InitializeComponent();
+            _customerService = customerService;
             this.Text = "E-Comm Suite - Customer Management";
             this.WindowState = FormWindowState.Maximized;
             InitializeWebView();
@@ -31,6 +23,11 @@ namespace ECommerceApp.Presentation.Admin
             this.Controls.Add(webView);
 
             await webView.EnsureCoreWebView2Async(null);
+            webView.CoreWebView2.DOMContentLoaded += async (s, e) => {
+                await LoadCustomersData();
+            };
+
+            webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
             string htmlContent = @"
             <!DOCTYPE html>
@@ -73,44 +70,35 @@ namespace ECommerceApp.Presentation.Admin
         
         .join-date { color: var(--text-muted); font-size: 14px; }
         .total-orders { font-weight: bold; text-align: center; color: var(--text-main); }
+
+.btn-back {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 15px;
+    border-radius: 8px;
+    color: var(--sidebar-bg);
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    transition: 0.2s;
+}
+.btn-back:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
     </style>
 </head>
 <body>
-
-    <div class='sidebar'>
-        <div class='sidebar-header d-flex align-items-center gap-2'>
-            <div class='bg-light text-dark p-2 rounded'><i class='bi bi-shop'></i></div>
-            <div>
-                <div class='fw-bold' style='font-size: 0.9rem;'>ADMIN PANEL</div>
-                <div style='font-size: 0.7rem; color: var(--text-light);'>E-Commerce System</div>
-            </div>
-        </div>
-        <nav class='mt-3'>
-            <a href='#' class='nav-link' onclick='navigate(""dashboard"")'><i class='bi bi-grid'></i> Dashboard</a>
-            <a href='#' class='nav-link' onclick='navigate(""categories"")'><i class='bi bi-tags'></i> Categories</a>
-            <a href='#' class='nav-link' onclick='navigate(""products"")'><i class='bi bi-box-seam'></i> Products</a>
-            <a href='#' class='nav-link' onclick='navigate(""orders"")'><i class='bi bi-cart'></i> Orders</a>
-            <a href='#' class='nav-link active' onclick='navigate(""users"")'><i class='bi bi-people'></i> Users</a>
-            <a href='#' class='nav-link' onclick='navigate(""admin"")'><i class='bi bi-person-gear'></i> Admin Management</a>
-        </nav>
-<div class='user-profile d-flex align-items-center justify-content-center'>
-    <button class='btn btn-link text-danger p-0' title='تسجيل الخروج' style='text-decoration: none;'>
-        <i class='bi bi-box-arrow-right' style='font-size: 1.1rem; cursor: pointer;'></i>
-        LogOut
-    </button>
-</div>
-    </div>
-
-
     <main class='main'>
-        <div class='header'>
-            <h1>Customer Management</h1>
-        </div>
-
-        <div class='search-container'>
-            <span>🔍</span>
-            <input type='text' id='customerSearch' placeholder='Search by name, email or ID...' onkeyup='filterCustomers()'>
-        </div>
+  <div class='header'>
+    <button class='btn-back' onclick='goBack()'>
+        <i class='bi bi-arrow-left'></i> Back to Dashboard
+    </button>
+    <h1>Customer Management</h1>
+</div>
 
         <div class='table-card'>
             <table id='customerTable'>
@@ -121,118 +109,91 @@ namespace ECommerceApp.Presentation.Admin
                         <th style='text-align: center;'>Total Orders</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <div class='customer-cell'>
-                                <div class='avatar'>JC</div>
-                                <div><span class='name'>Jane Cooper</span><span class='email'>jane.cooper@example.com</span></div>
-                            </div>
-                        </td>
-                        <td class='join-date'>Oct 12, 2023</td>
-                        <td class='total-orders'>12</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class='customer-cell'>
-                                <div class='avatar'>CF</div>
-                                <div><span class='name'>Cody Fisher</span><span class='email'>cody.fisher@example.com</span></div>
-                            </div>
-                        </td>
-                        <td class='join-date'>Sep 28, 2023</td>
-                        <td class='total-orders'>5</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class='customer-cell'>
-                                <div class='avatar'>EH</div>
-                                <div><span class='name'>Esther Howard</span><span class='email'>esther.howard@example.com</span></div>
-                            </div>
-                        </td>
-                        <td class='join-date'>Sep 15, 2023</td>
-                        <td class='total-orders'>24</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class='customer-cell'>
-                                <div class='avatar'>JW</div>
-                                <div><span class='name'>Jenny Wilson</span><span class='email'>jenny.wilson@example.com</span></div>
-                            </div>
-                        </td>
-                        <td class='join-date'>Aug 30, 2023</td>
-                        <td class='total-orders'>8</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class='customer-cell'>
-                                <div class='avatar'>KW</div>
-                                <div><span class='name'>Kristin Watson</span><span class='email'>kristin.watson@example.com</span></div>
-                            </div>
-                        </td>
-                        <td class='join-date'>Aug 12, 2023</td>
-                        <td class='total-orders'>3</td>
-                    </tr>
-                </tbody>
+                <tbody id=""customerTableBody""> </tbody>
             </table>
         </div>
     </main>
 
     <script>
-        function navigate(page) {
-            window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page });
+        window.chrome.webview.addEventListener('message', event => {
+        const message = event.data;
+        if (message.type === 'RENDER_CUSTOMERS') {
+            renderTable(message.payload);
         }
+    });
+
+    function renderTable(customers) {
+        const tbody = document.getElementById('customerTableBody');
+        tbody.innerHTML = ''; // تفريغ الجدول
+
+        customers.forEach(customer => {
+            const row = `
+                <tr>
+                    <td>
+                        <div class='customer-cell'>
+                            <div class='avatar'>${customer.initials || '??'}</div>
+                            <div>
+                                <span class='name'>${customer.name}</span>
+                                <span class='email'>${customer.email}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class='join-date'>${customer.joinDate}</td>
+                    <td class='total-orders'>${customer.totalOrders}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+function goBack() {
+    window.chrome.webview.postMessage({ action: 'CLOSE' });
+}
+    function navigate(page) {
+        window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page });
+    }
+
     </script>
 </body>
 </html>";
 
             webView.CoreWebView2.NavigateToString(htmlContent);
 
-            webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
         }
+        private async Task LoadCustomersData()
+        {
+            var customers = await _customerService.Customers();
 
+            var data = new
+            {
+                type = "RENDER_CUSTOMERS",
+                payload = customers.Select(c => new {
+                    name = c.Name,
+                    email = c.Email,
+                    initials = string.Concat(c.Name.Where(char.IsUpper)),
+                    joinDate = c.JoinDate.ToString("MMM dd, yyyy"),
+                    totalOrders = c.TotalOrders
+                })
+            };
+
+            string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            webView.CoreWebView2.PostWebMessageAsJson(json);
+        }
         private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
             {
-                string action = doc.RootElement.GetProperty("action").GetString();
-                if (action == "NAVIGATE")
+                if (doc.RootElement.TryGetProperty("action", out JsonElement actionElement))
                 {
-                    string page = doc.RootElement.GetProperty("page").GetString();
-                    HandleNavigation(page);
+                    string action = actionElement.GetString();
+
+                    if (action == "CLOSE")
+                    {
+                        this.Invoke(new Action(() => this.Close()));
+                    }
                 }
             }
         }
-        private readonly ICategoryService _categoryService;
 
-        private void HandleNavigation(string page)
-        {
-            switch (page)
-            {
-                //case "dashboard":
-                //    new DashboardForm().Show();
-                //    this.Hide();
-                //    break;
-                //case "products":
-                //    new ProductForm().Show();
-                //    this.Hide();
-                //    break;
-                //case "orders":
-                //    new OrderForm().Show();
-                //    this.Hide();
-                //    break;
-                //case "categories":
-                //    new CategoryForm(_categoryService).Show();
-                //    this.Hide();
-                //    break;
-                //case "admin":
-                //    new AdminForm().Show();
-                //    this.Hide();
-                //    break;
-                default:
-                    MessageBox.Show($"Opening {page} view...");
-                    break;
-            }
-        }
     }
 }

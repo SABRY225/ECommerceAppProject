@@ -6,11 +6,7 @@ using ECommerceApp.Application.Services;
 using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
 using ECommerceApp.Infrastructure.Repositories;
-using ECommerceApp.Presentation.Auth;
 using Microsoft.Web.WebView2.WinForms;
-using System;
-using System.Text.Json;
-using System.Windows.Forms;
 
 
 namespace ECommerceApp.Presentation.Client

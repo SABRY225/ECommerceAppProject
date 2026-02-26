@@ -2,7 +2,6 @@ using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Application.Mapper;
-using ECommerceApp.Application.Mapping.CustomerUserMapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;

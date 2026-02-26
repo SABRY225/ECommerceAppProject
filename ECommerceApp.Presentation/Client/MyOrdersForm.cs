@@ -2,7 +2,6 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
-using System.Windows.Forms;
 
 namespace ECommerceApp.Presentation.Client
 {
@@ -29,14 +28,12 @@ namespace ECommerceApp.Presentation.Client
             await webView.EnsureCoreWebView2Async(null);
             webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
-            // كود الـ HTML مدمج بالأسفل
             string htmlContent = GetHtmlTemplate();
             webView.NavigateToString(htmlContent);
         }
 
         private async Task LoadOrders()
         {
-            // جلب البيانات من السيرفس
             var orders = await _orderService.GetCustomerOrders(UserSession.CustomerId);
 
             var data = new
@@ -70,7 +67,6 @@ namespace ECommerceApp.Presentation.Client
                 await LoadOrders();
                 SetCustomerInfo();
             }
-            // إضافة حدث الرجوع هنا
             else if (type == "BACK_CLICKED")
             {
                 this.Close(); 

@@ -5,13 +5,9 @@ using ECommerceApp.Application.Interfaces.Services;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Domain.Entities;
 using ECommerceApp.Infrastructure.Data;
-using ECommerceApp.Infrastructure.Enums;
 using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Presentation.Admin;
-using ECommerceApp.Presentation.Client;
 using Microsoft.Web.WebView2.WinForms;
-using System;
-using System.Windows.Forms;
 
 namespace ECommerceApp.Presentation.Auth
 {
@@ -25,6 +21,7 @@ namespace ECommerceApp.Presentation.Auth
         private IProductService _productService;
         private IOrderService _orderService;
         private ICartService _cartService;
+        private ICustomerUserService _customerUserService;
 
         public SignAdmin()
         {
@@ -162,16 +159,18 @@ window.chrome.webview.addEventListener('message', function(event){
 
                             var successMessage = new { type = "success", message = "Login Success!" };
                             webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
-                            var context = new ApplicationDbContext();
+                            ICustomerUserRepository userRepository = new CustomerUserRepository(dbContext); var context = new ApplicationDbContext();
                             var categoryRepo = new GenericRebository<Category>(context);
                             var productRepo = new GenericRebository<Product>(context);
                             var orderRepo = new GenericRebository<Order>(context);
                             var cartRepo = new GenericRebository<Cart>(context);
+                            var custRepo = new GenericRebository<User>(context);
                             _categoryService = new CategoryService(categoryRepo);
                             _productService = new ProductService(productRepo);
+                            _customerUserService = new CustomerUserService(userRepository, custRepo);
                             _orderService = new OrderService(orderRepo, cartRepo, productRepo);
 
-                            var adminForm = new DashboardForm(_categoryService, _productService, _orderService);
+                            var adminForm = new DashboardForm(_categoryService, _productService, _orderService, _customerUserService);
                             adminForm.Show();
 
                             this.Hide();

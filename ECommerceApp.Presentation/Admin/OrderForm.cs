@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.DTOs.Order;
 using ECommerceApp.Application.Interfaces.Services;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Infrastructure.Enums;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -15,7 +16,8 @@ namespace ECommerceApp.Presentation.Admin
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IOrderService _OrderService;
-        public OrderForm(IOrderService orderService , IProductService productService, ICategoryService categoryService)
+        private readonly ICustomerUserService _customerUserService;
+        public OrderForm(IOrderService orderService , IProductService productService, ICategoryService categoryService, ICustomerUserService customerUserService )
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Order Management";
@@ -23,6 +25,7 @@ namespace ECommerceApp.Presentation.Admin
             _OrderService = orderService;
             _categoryService = categoryService;
             _productService = productService;
+            _customerUserService = customerUserService;
             InitializeWebView();
         }
         private async void InitializeWebView()
@@ -387,7 +390,7 @@ window.onload = () => {
                         break;
 
                     case "GO_BACK":
-                        var adminForm = new DashboardForm(_categoryService, _productService, _OrderService);
+                        var adminForm = new DashboardForm(_categoryService, _productService, _OrderService, _customerUserService);
                         adminForm.Show();
                         this.Close();
                         break;
