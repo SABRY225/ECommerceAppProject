@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.DTOs.Customer;
+using ECommerceApp.Application.DTOs.Customer;
 using ECommerceApp.Application.Interfaces.Rebositories;
 using ECommerceApp.Application.Interfaces.Rebositories.ICustomerUserRepository;
 using ECommerceApp.Application.Interfaces.Services;
@@ -155,17 +155,18 @@ window.chrome.webview.addEventListener('message', function(event){
 
                         try
                         {
-                            userService.Login(data);
-
+                            var user = userService.Login(data);
                             var successMessage = new { type = "success", message = "Login Success!" };
                             webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
-                            ICustomerUserRepository userRepository = new CustomerUserRepository(dbContext); var context = new ApplicationDbContext();
+                            ICustomerUserRepository userRepository = new CustomerUserRepository(dbContext); 
+                            IGenericRebository<Category> CateRepository = new GenericRebository<Category>(dbContext);
+                            var context = new ApplicationDbContext();
                             var categoryRepo = new GenericRebository<Category>(context);
                             var productRepo = new GenericRebository<Product>(context);
                             var orderRepo = new GenericRebository<Order>(context);
                             var cartRepo = new GenericRebository<Cart>(context);
                             var custRepo = new GenericRebository<User>(context);
-                            _categoryService = new CategoryService(categoryRepo);
+                            _categoryService = new CategoryService(CateRepository, orderRepo, productRepo);
                             _productService = new ProductService(productRepo);
                             _customerUserService = new CustomerUserService(userRepository, custRepo);
                             _orderService = new OrderService(orderRepo, cartRepo, productRepo);
