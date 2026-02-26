@@ -11,8 +11,12 @@ namespace ECommerceApp.Application.DTOs.CategoryDtos
     {
         public int TotalCategories { get; set; }
         public int ActiveProducts { get; set; }
+        public int TotalProducts { get; set; }
+        public int TotalOrders { get; set; }
+        public decimal TotalSales { get; set; }
         public string TopPerforming { get; set; }
         public DateTime LastUpdated { get; set; }
+
 
     }
 }

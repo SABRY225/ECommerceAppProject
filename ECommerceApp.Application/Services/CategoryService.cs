@@ -10,13 +10,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Application.Services
 {
-    public class CategoryService(IGenericRebository<Category> genericRebository) : ICategoryService
+    public class CategoryService(IGenericRebository<Category> genericRebository,
+        IGenericRebository<Order> orderRebository,
+        IGenericRebository<Product> productRebository) : ICategoryService
     {
         private readonly IGenericRebository<Category> _genericRebository = genericRebository;
+        private readonly IGenericRebository<Order> _orderRebository = orderRebository;
+        private readonly IGenericRebository<Product> _productRebository = productRebository;
+
 
         public async Task<CategoryDashboardDto> GetDashboard()
         {
             var categories = _genericRebository.GetAll().Include(c=>c.Products).Where(c=>c.IsDeleted==false);
+
             var totalCategories = await categories.CountAsync();
             
 
@@ -25,12 +31,18 @@ namespace ECommerceApp.Application.Services
             var topCategory = await categories.OrderByDescending(c => c.Products.Count).FirstOrDefaultAsync();
 
             var lastUpdated = await categories.MaxAsync(c => c.UpdatedAt ?? c.CreatedAt);
+            var totalSales = await _orderRebository.GetAll().SumAsync(o => o.TotalAmount);
+            var totalOrders = await _orderRebository.GetAll().CountAsync();
+            var totalProducts = await _productRebository.GetAll().CountAsync();
             var categoryDashDto = new CategoryDashboardDto
             {
                 TotalCategories = totalCategories,
                 ActiveProducts = activeProducts,
                 TopPerforming = topCategory?.CategoryName ?? "no category",
-                LastUpdated = lastUpdated
+                LastUpdated = lastUpdated,
+                TotalSales = totalSales,
+                TotalOrders = totalOrders,
+                TotalProducts = totalProducts,
             };
 
             return categoryDashDto;
