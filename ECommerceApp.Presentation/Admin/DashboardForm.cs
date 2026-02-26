@@ -1,5 +1,4 @@
 ﻿using ECommerceApp.Application.Interfaces.Services;
-using ECommerceApp.Presentation.Client;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System.Text.Json;
@@ -14,26 +13,101 @@ namespace ECommerceApp.Presentation.Admin
         private readonly IOrderService _orderService;
         private readonly ICustomerUserService _customerUserService;
 
-        public DashboardForm(ICategoryService categoryService, IProductService productService,IOrderService orderService, ICustomerUserService customerUserService  )
+        public DashboardForm(ICategoryService categoryService, IProductService productService, IOrderService orderService, ICustomerUserService customerUserService)
         {
             InitializeComponent();
             this.Text = "E-Comm Suite - Administrator Dashboard";
             this.WindowState = FormWindowState.Maximized;
+
             _categoryService = categoryService;
             _productService = productService;
             _orderService = orderService;
             _customerUserService = customerUserService;
+
             InitializeWebView();
         }
+
         private async void InitializeWebView()
         {
             webView = new WebView2 { Dock = DockStyle.Fill };
             this.Controls.Add(webView);
 
             await webView.EnsureCoreWebView2Async(null);
+
             webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
-            string htmlContent = @"
+            webView.NavigationCompleted += async (s, e) => {
+                await LoadDashboardDataFromService();
+            };
+
+            string htmlContent = GetHtmlTemplate();
+            webView.NavigateToString(htmlContent);
+        }
+
+        private async Task LoadDashboardDataFromService()
+        {
+            try
+            {
+                var stats = await _categoryService.GetDashboard();
+
+                string jsonStats = JsonSerializer.Serialize(stats);
+
+                await webView.CoreWebView2.ExecuteScriptAsync($"updateDashboard({jsonStats})");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading dashboard data: {ex.Message}");
+            }
+        }
+
+        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
+            {
+                string action = doc.RootElement.GetProperty("action").GetString();
+                if (action == "NAVIGATE")
+                {
+                    string page = doc.RootElement.GetProperty("page").GetString();
+                    HandleNavigation(page);
+                }
+                else if (action == "LOGOUT")
+                {
+                    var result = MessageBox.Show("Are you sure you want to log out?", "Logout",
+                                               MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                    if (result == DialogResult.Yes)
+                    {
+                        System.Windows.Forms.Application.Exit();
+                    }
+                }
+            }
+        }
+
+        private void HandleNavigation(string page)
+        {
+            switch (page)
+            {
+                case "categories":
+                    new CategoryForm(_categoryService, _productService, _orderService, _customerUserService).Show();
+                    this.Hide();
+                    break;
+                case "products":
+                    new ProductForm(_productService, _categoryService, _orderService, _customerUserService).Show();
+                    this.Hide();
+                    break;
+                case "orders":
+                    new OrderForm(_orderService, _productService, _categoryService, _customerUserService).Show();
+                    this.Hide();
+                    break;
+                case "users":
+                    new CustomerForm(_customerUserService).Show();
+                    break;
+            }
+        }
+
+        private string GetHtmlTemplate()
+        {
+            return @"
 <!DOCTYPE html>
 <html lang='en'>
 <head>
@@ -43,28 +117,17 @@ namespace ECommerceApp.Presentation.Admin
     <style>
         :root { --sidebar-bg: #1e3a58; --main-bg: #f4f7f9; --text-light: #a5b4c1; }
         body { background-color: var(--main-bg); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
         .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; }
         .sidebar-header { padding: 30px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .nav-link { color: var(--text-light); padding: 15px 25px; text-decoration: none; display: flex; align-items: center; gap: 15px; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; }
-        .user-profile { margin-top: auto; padding: 20px; background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; }
-
-        /* Main Content */
         .content { flex: 1; overflow-y: auto; padding: 40px; }
-        .stat-card { background: white; border-radius: 12px; padding: 25px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .stat-icon { width: 50px; height: 50px; border-radius: 10px; background: #f0f4f8; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--sidebar-bg); }
-        
-        /* Table */
-        .table-card { background: white; border-radius: 12px; padding: 25px; margin-top: 30px; }
-        .status-badge { font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; font-weight: bold; }
-        .status-paid { background: #e6f9f0; color: #00b050; }
-        .status-processing { background: #fff4e6; color: #ff9900; }
+        .stat-card { background: white; border-radius: 12px; padding: 25px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.03); height: 100%; }
+        .stat-icon { width: 45px; height: 45px; border-radius: 10px; background: #f0f4f8; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--sidebar-bg); }
+        .user-profile { margin-top: auto; padding: 20px; background: rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
-
     <div class='sidebar'>
         <div class='sidebar-header d-flex align-items-center gap-2'>
             <div class='bg-light text-dark p-2 rounded'><i class='bi bi-shop'></i></div>
@@ -80,138 +143,86 @@ namespace ECommerceApp.Presentation.Admin
             <a href='#' class='nav-link' onclick='navigate(""orders"")'><i class='bi bi-cart'></i> Orders</a>
             <a href='#' class='nav-link' onclick='navigate(""users"")'><i class='bi bi-people'></i> Users</a>
         </nav>
-<div class='user-profile d-flex align-items-center justify-content-center'>
-    <button class='btn btn-link text-danger p-0' 
-            onclick='logout()' 
-            title='تسجيل الخروج' 
-            style='text-decoration: none;'>
-        <i class='bi bi-box-arrow-right' style='font-size: 1.1rem; cursor: pointer;'></i>
-        LogOut
-    </button>
-</div>
+        <div class='user-profile text-center'>
+            <button class='btn btn-link text-danger p-0 w-100' onclick='logout()' style='text-decoration: none;'>
+                <i class='bi bi-box-arrow-right'></i> Log Out
+            </button>
+        </div>
     </div>
 
     <div class='content'>
-        <h4 class='fw-bold mb-4'>Administrator Dashboard</h4>
+        <div class='d-flex justify-content-between align-items-center mb-4'>
+            <h4 class='fw-bold m-0'>Administrator Dashboard</h4>
+            <small class='text-muted'>Last Updated: <span id='lastUpdated'>-</span></small>
+        </div>
         
         <div class='row g-4'>
             <div class='col-md-3'>
                 <div class='stat-card d-flex align-items-center justify-content-between'>
-                    <div><div class='text-muted small'>TOTAL PRODUCTS</div><h3 class='fw-bold m-0'>1,240</h3></div>
+                    <div><div class='text-muted small'>TOTAL PRODUCTS</div><h3 class='fw-bold m-0' id='totalProducts'>0</h3></div>
                     <div class='stat-icon'><i class='bi bi-box'></i></div>
                 </div>
             </div>
             <div class='col-md-3'>
                 <div class='stat-card d-flex align-items-center justify-content-between'>
-                    <div><div class='text-muted small'>TOTAL CATEGORIES</div><h3 class='fw-bold m-0'>42</h3></div>
+                    <div><div class='text-muted small'>TOTAL CATEGORIES</div><h3 class='fw-bold m-0' id='totalCategories'>0</h3></div>
                     <div class='stat-icon'><i class='bi bi-diagram-3'></i></div>
                 </div>
             </div>
             <div class='col-md-3'>
                 <div class='stat-card d-flex align-items-center justify-content-between'>
-                    <div><div class='text-muted small'>TOTAL ORDERS</div><h3 class='fw-bold m-0'>856</h3></div>
+                    <div><div class='text-muted small'>TOTAL ORDERS</div><h3 class='fw-bold m-0' id='totalOrders'>0</h3></div>
                     <div class='stat-icon'><i class='bi bi-bag'></i></div>
                 </div>
             </div>
             <div class='col-md-3'>
                 <div class='stat-card d-flex align-items-center justify-content-between'>
-                    <div><div class='text-muted small'>TOTAL SALES</div><h3 class='fw-bold m-0'>$124,500</h3></div>
+                    <div><div class='text-muted small'>TOTAL SALES</div><h3 class='fw-bold m-0' id='totalSales'>$0</h3></div>
                     <div class='stat-icon'><i class='bi bi-cash-stack'></i></div>
                 </div>
             </div>
-        </div>
 
-        <div class='table-card'>
-            <h6 class='fw-bold mb-4'><i class='bi bi-list-ul me-2'></i> Recent Orders Data</h6>
-            <table class='table align-middle'>
-                <thead class='table-light'>
-                    <tr style='font-size: 0.75rem; color: #888;'>
-                        <th>ORDER ID</th><th>CUSTOMER</th><th>DATE</th><th>TOTAL AMOUNT</th><th>STATUS</th><th>ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody style='font-size: 0.85rem;'>
-                    <tr>
-                        <td class='fw-bold'>#ORD-7721</td>
-                        <td>Jane Cooper</td>
-                        <td>Oct 24, 2023</td>
-                        <td class='fw-bold'>$540.00</td>
-                        <td><span class='status-badge status-paid'>PAID</span></td>
-                        <td><i class='bi bi-three-dots cursor-pointer'></i></td>
-                    </tr>
-                    <tr>
-                        <td class='fw-bold'>#ORD-7722</td>
-                        <td>Cody Wilson</td>
-                        <td>Oct 25, 2023</td>
-                        <td class='fw-bold'>$1,240.50</td>
-                        <td><span class='status-badge status-processing'>PROCESSING</span></td>
-                        <td><i class='bi bi-three-dots cursor-pointer'></i></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class='col-md-6'>
+                <div class='stat-card'>
+                    <div class='text-muted small mb-2'>TOP PERFORMING CATEGORY</div>
+                    <div class='d-flex align-items-center gap-3'>
+                        <div class='stat-icon bg-primary text-white'><i class='bi bi-star'></i></div>
+                        <h4 class='fw-bold m-0' id='topPerforming'>-</h4>
+                    </div>
+                </div>
+            </div>
+            <div class='col-md-6'>
+                <div class='stat-card'>
+                    <div class='text-muted small mb-2'>ACTIVE PRODUCTS IN CATEGORIES</div>
+                    <div class='d-flex align-items-center gap-3'>
+                        <div class='stat-icon bg-success text-white'><i class='bi bi-check-circle'></i></div>
+                        <h4 class='fw-bold m-0' id='activeProducts'>0</h4>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-function logout() {
-        window.chrome.webview.postMessage({ action: 'LOGOUT' });
-    }
-        function navigate(page) {
-            window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page });
+        function logout() { window.chrome.webview.postMessage({ action: 'LOGOUT' }); }
+        function navigate(page) { window.chrome.webview.postMessage({ action: 'NAVIGATE', page: page }); }
+
+        function updateDashboard(data) {
+            document.getElementById('totalProducts').innerText = data.TotalProducts.toLocaleString();
+            document.getElementById('totalCategories').innerText = data.TotalCategories.toLocaleString();
+            document.getElementById('totalOrders').innerText = data.TotalOrders.toLocaleString();
+            document.getElementById('totalSales').innerText = '$' + data.TotalSales.toLocaleString();
+            document.getElementById('topPerforming').innerText = data.TopPerforming;
+            document.getElementById('activeProducts').innerText = data.ActiveProducts.toLocaleString();
+            
+            if(data.LastUpdated) {
+                const date = new Date(data.LastUpdated);
+                document.getElementById('lastUpdated').innerText = date.toLocaleString();
+            }
         }
     </script>
 </body>
 </html>";
-
-            webView.NavigateToString(htmlContent);
-        }
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
-        {
-            using (JsonDocument doc = JsonDocument.Parse(e.WebMessageAsJson))
-            {
-                string action = doc.RootElement.GetProperty("action").GetString();
-                if (action == "NAVIGATE")
-                {
-                    string page = doc.RootElement.GetProperty("page").GetString();
-                    HandleNavigation(page);
-                }
-                else if (action == "LOGOUT")
-                {
-                    var result = MessageBox.Show("Are you sure you want to log out?", "sure",
-                                                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-                    if (result == DialogResult.Yes)
-                    {
-                        System.Windows.Forms.Application.Exit();
-                        this.Close();
-                    }
-                }
-            }
-        }
-
-        private void HandleNavigation(string page)
-        {
-            switch (page)
-            {
-                case "categories":
-                    new CategoryForm(_categoryService, _productService, _orderService, _customerUserService).Show();
-                    //this.Hide();
-                    break;
-                case "products":
-                    new ProductForm(_productService, _categoryService,_orderService, _customerUserService).Show();
-                    //this.Hide();
-                    break;
-                case "orders":
-                    new OrderForm(_orderService,_productService, _categoryService, _customerUserService).Show();
-                    //this.Hide();
-                    break;
-                case "users":
-                    new CustomerForm(_customerUserService).Show();
-                    //this.Hide();
-                    break;
-                default:
-                    MessageBox.Show($"Opening {page} view...");
-                    break;
-            }
         }
     }
 }

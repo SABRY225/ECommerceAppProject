@@ -169,6 +169,20 @@ body{
     background:#f1f5f9;
     transform:translateX(-3px);
 }
+
+.category-id-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 1;
+}
+.category-card { position: relative; }
+
 </style>
 </head>
 
@@ -222,6 +236,7 @@ window.chrome.webview.addEventListener('message', event => {
         data.categories.forEach(cat => {
             cards += `
             <div class=""category-card"">
+                <div class=""category-id-badge"">ID: ${cat.id}</div>
                 <img src=""${cat.imagePath || 'https://via.placeholder.com/400x200?text=No+Image'}"" 
                      class=""category-img""
                      onerror=""this.src='https://via.placeholder.com/400x200?text=No+Image'"">

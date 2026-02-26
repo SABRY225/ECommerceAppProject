@@ -172,7 +172,7 @@ window.chrome.webview.addEventListener('message', function(event){
                         {
                             var user = UserService.Login(data);
 
-                            if (user != null)
+                            if (user != null && user.Role !="1")
                             {
                                 UserSession.CustomerId = user.Id; 
                                 UserSession.CustomerName = user.FirstName;

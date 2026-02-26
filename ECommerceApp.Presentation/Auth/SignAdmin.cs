@@ -155,25 +155,35 @@ window.chrome.webview.addEventListener('message', function(event){
 
                         try
                         {
-                            userService.Login(data);
+                            var user = userService.Login(data);
+                            if(user.Role == "1")
+                            {
+                                var successMessage = new { type = "success", message = "Login Success!" };
+                                webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
+                                ICustomerUserRepository userRepository = new CustomerUserRepository(dbContext);
+                                IGenericRebository<Category> CateRepository = new GenericRebository<Category>(dbContext);
+                                var context = new ApplicationDbContext();
+                                var categoryRepo = new GenericRebository<Category>(context);
+                                var productRepo = new GenericRebository<Product>(context);
+                                var orderRepo = new GenericRebository<Order>(context);
+                                var cartRepo = new GenericRebository<Cart>(context);
+                                var custRepo = new GenericRebository<User>(context);
+                                _categoryService = new CategoryService(CateRepository, orderRepo, productRepo);
+                                _productService = new ProductService(productRepo);
+                                _customerUserService = new CustomerUserService(userRepository, custRepo);
+                                _orderService = new OrderService(orderRepo, cartRepo, productRepo);
 
-                            var successMessage = new { type = "success", message = "Login Success!" };
-                            webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(successMessage));
-                            ICustomerUserRepository userRepository = new CustomerUserRepository(dbContext); var context = new ApplicationDbContext();
-                            var categoryRepo = new GenericRebository<Category>(context);
-                            var productRepo = new GenericRebository<Product>(context);
-                            var orderRepo = new GenericRebository<Order>(context);
-                            var cartRepo = new GenericRebository<Cart>(context);
-                            var custRepo = new GenericRebository<User>(context);
-                            _categoryService = new CategoryService(categoryRepo);
-                            _productService = new ProductService(productRepo);
-                            _customerUserService = new CustomerUserService(userRepository, custRepo);
-                            _orderService = new OrderService(orderRepo, cartRepo, productRepo);
+                                var adminForm = new DashboardForm(_categoryService, _productService, _orderService, _customerUserService);
+                                adminForm.Show();
 
-                            var adminForm = new DashboardForm(_categoryService, _productService, _orderService, _customerUserService);
-                            adminForm.Show();
-
-                            this.Hide();
+                                this.Hide();
+                            }
+                            else
+                            {
+                                var errorMessage = new { type = "error", message = "not Auth" };
+                                webView.CoreWebView2.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(errorMessage));
+                            }
+                           
                         }
                         catch (Exception ex)
                         {

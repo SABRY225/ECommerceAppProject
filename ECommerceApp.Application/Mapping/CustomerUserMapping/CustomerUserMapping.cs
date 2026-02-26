@@ -18,6 +18,7 @@ namespace ECommerceApp.Application.Mapping.CustomerUserMapping
                 .NewConfig()
                 .Map(dest => dest.Email, src => src.Email)
                 .Map(dest => dest.Password, src => src.Password)
+
                 .IgnoreNonMapped(true);
 
             TypeAdapterConfig<RegitserCustomerUserDto, User>
@@ -32,7 +33,9 @@ namespace ECommerceApp.Application.Mapping.CustomerUserMapping
 
             TypeAdapterConfig<User, CustomerDto>
                 .NewConfig()
-                .Map(dest => dest.PhoneNumber, src => src.Phone);
+                .Map(dest => dest.PhoneNumber, src => src.Phone)
+                .Map(dest => dest.Role, src => src.Role);
+
         }
     }
     //public void LoginMapping()
